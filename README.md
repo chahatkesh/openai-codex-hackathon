@@ -1,3 +1,6 @@
+<img width="3000" height="1000" alt="Git Repo Cover" src="https://github.com/user-attachments/assets/8ddae07c-14ee-4664-9711-5e06effcc5ef" />
+
+
 # FuseKit 🔥
 
 > **Describe what you want built. FuseKit figures out every API it needs — and integrates the ones it doesn't have yet, live, before your eyes.**
