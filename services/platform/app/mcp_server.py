@@ -1,4 +1,4 @@
-"""MCP server — implements tools/list and tools/call over SSE transport."""
+"""MCP server — implements tools/list and tools/call for FuseKit MCP transports."""
 
 import time
 import uuid

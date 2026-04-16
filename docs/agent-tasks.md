@@ -260,7 +260,7 @@ Agent 4 (Infra/E2E):  ████████ Phase A ████████�
 ### Step 8: Build Connect page
 **Do:** Create `apps/web/app/connect/page.tsx` with:
 - Step-by-step instructions for adding MCP URL to Codex.
-- Copyable MCP endpoint URL (`http://your-domain:8000/mcp/sse`).
+- Copyable MCP endpoint URL (`http://your-domain:8000/mcp/http`).
 - Demo auth token display (for hackathon: `demo-token-fusekit-2026`).
 - Example Codex configuration snippet.
 

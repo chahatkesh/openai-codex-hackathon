@@ -22,7 +22,7 @@ def _db_url() -> str:
 @pytest.mark.asyncio
 async def test_tool_not_found_creates_integration_job(service_config):
     started_at = datetime.now(timezone.utc)
-    async with McpTestClient(service_config.mcp_sse_url) as mcp:
+    async with McpTestClient(service_config.mcp_http_url) as mcp:
         text = await mcp.call_tool("__missing_tool_for_e2e__", {"foo": "bar"})
         assert "TOOL_NOT_FOUND" in text
 

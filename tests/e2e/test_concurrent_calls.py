@@ -38,7 +38,7 @@ async def test_wallet_deductions_are_atomic_under_concurrency(service_config, ap
         )
 
         async def worker() -> str:
-            async with McpTestClient(service_config.mcp_sse_url) as mcp:
+            async with McpTestClient(service_config.mcp_http_url) as mcp:
                 return await mcp.call_tool("scrape_url", {"url": f"{service_config.api_base_url}/health"})
 
         results = await asyncio.gather(*(worker() for _ in range(10)))

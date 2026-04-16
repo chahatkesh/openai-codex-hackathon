@@ -37,7 +37,7 @@ async def test_insufficient_funds_blocks_tool_calls(service_config, api_client):
             max(cost - 1, 0),
         )
 
-        async with McpTestClient(service_config.mcp_sse_url) as mcp:
+        async with McpTestClient(service_config.mcp_http_url) as mcp:
             text = await mcp.call_tool("scrape_url", {"url": f"{service_config.api_base_url}/health"})
             assert "INSUFFICIENT_FUNDS" in text
     finally:
@@ -54,7 +54,7 @@ async def test_refund_on_execution_error(service_config, api_client):
     before_resp.raise_for_status()
     before_balance = before_resp.json()["balance"]
 
-    async with McpTestClient(service_config.mcp_sse_url) as mcp:
+    async with McpTestClient(service_config.mcp_http_url) as mcp:
         text = await mcp.call_tool("scrape_url", {"url": "http://127.0.0.1:9/nope"})
         assert "EXECUTION_ERROR" in text
 

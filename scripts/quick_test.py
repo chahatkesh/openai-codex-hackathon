@@ -7,11 +7,11 @@ Usage:
 
 import asyncio
 import httpx
-from mcp.client.sse import sse_client
 from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
 
-MCP_URL = "http://localhost:8000/mcp/sse"
+MCP_URL = "http://localhost:8000/mcp/http"
 WALLET_URL = "http://localhost:8000/api/wallet/balance"
 
 
@@ -22,8 +22,8 @@ async def main():
     print(f"1. Wallet BEFORE: {before['balance']} credits")
 
     # 2. Connect to MCP and list tools
-    async with sse_client(MCP_URL) as streams:
-        async with ClientSession(*streams) as session:
+    async with streamable_http_client(MCP_URL) as streams:
+        async with ClientSession(*streams[:2]) as session:
             await session.initialize()
 
             tools = await session.list_tools()

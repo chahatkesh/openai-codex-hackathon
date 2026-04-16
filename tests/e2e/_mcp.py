@@ -4,17 +4,17 @@ from typing import Any
 
 
 class McpTestClient:
-    def __init__(self, sse_url: str):
-        self.sse_url = sse_url
+    def __init__(self, http_url: str):
+        self.http_url = http_url
         self._streams = None
         self._session = None
 
     async def __aenter__(self) -> "McpTestClient":
         from mcp import ClientSession
-        from mcp.client.sse import sse_client
+        from mcp.client.streamable_http import streamable_http_client
 
-        self._streams = sse_client(self.sse_url)
-        read_stream, write_stream = await self._streams.__aenter__()
+        self._streams = streamable_http_client(self.http_url)
+        read_stream, write_stream, _get_session_id = await self._streams.__aenter__()
         self._session = ClientSession(read_stream, write_stream)
         await self._session.__aenter__()
         await self._session.initialize()

@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-MCP_SSE_URL = os.getenv("MCP_SSE_URL", f"{API_BASE_URL}/mcp/sse")
+MCP_HTTP_URL = os.getenv("MCP_HTTP_URL", f"{API_BASE_URL}/mcp/http")
 SMOKE_MODE = os.getenv("SMOKE_MODE", "stub").strip().lower()
 SMOKE_DOCS_URL = os.getenv("SMOKE_DOCS_URL", "https://example.com/docs")
 SMOKE_TOOL_NAME = os.getenv("SMOKE_TOOL_NAME", "demo_generated_tool")
@@ -57,24 +57,24 @@ class SmokeFailure(RuntimeError):
 
 
 class McpClient:
-    """Small wrapper around MCP SSE client APIs."""
+    """Small wrapper around MCP streamable HTTP client APIs."""
 
-    def __init__(self, sse_url: str):
-        self.sse_url = sse_url
+    def __init__(self, http_url: str):
+        self.http_url = http_url
         self._streams = None
         self._session = None
 
     async def __aenter__(self) -> "McpClient":
         try:
             from mcp import ClientSession
-            from mcp.client.sse import sse_client
+            from mcp.client.streamable_http import streamable_http_client
         except ModuleNotFoundError as exc:
             raise SmokeFailure(
                 "mcp package is not installed. Install platform dependencies first."
             ) from exc
 
-        self._streams = sse_client(self.sse_url)
-        read_stream, write_stream = await self._streams.__aenter__()
+        self._streams = streamable_http_client(self.http_url)
+        read_stream, write_stream, _get_session_id = await self._streams.__aenter__()
         self._session = ClientSession(read_stream, write_stream)
         await self._session.__aenter__()
         await self._session.initialize()
@@ -213,11 +213,18 @@ async def run() -> int:
             if not ok:
                 raise SmokeFailure("Health check failed")
 
-            async with McpClient(MCP_SSE_URL) as mcp:
+            async with McpClient(MCP_HTTP_URL) as mcp:
                 # Step 2
                 tools = await mcp.list_tools()
                 tool_names = {getattr(t, "name", None) for t in tools}
-                expected = {"scrape_url", "send_email", "send_sms", "search_web", "get_producthunt"}
+                expected = {
+                    "scrape_url",
+                    "send_email",
+                    "send_sms",
+                    "search_web",
+                    "get_producthunt",
+                    "request_integration",
+                }
                 ok = expected.issubset(tool_names)
                 result = StepResult(
                     2,
@@ -360,7 +367,7 @@ async def run() -> int:
                 raise SmokeFailure("integration job did not complete")
 
             # Step 9
-            async with McpClient(MCP_SSE_URL) as mcp:
+            async with McpClient(MCP_HTTP_URL) as mcp:
                 tools = await mcp.list_tools()
                 tool_names = {getattr(t, "name", None) for t in tools}
                 if SMOKE_TOOL_NAME in tool_names:

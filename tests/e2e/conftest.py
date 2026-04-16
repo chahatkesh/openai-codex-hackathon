@@ -13,14 +13,14 @@ httpx = pytest.importorskip("httpx")
 @dataclass
 class ServiceConfig:
     api_base_url: str
-    mcp_sse_url: str
+    mcp_http_url: str
 
 
 @pytest.fixture(scope="session")
 def service_config() -> ServiceConfig:
     api_base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
-    mcp_sse_url = os.getenv("MCP_SSE_URL", f"{api_base_url}/mcp/sse")
-    return ServiceConfig(api_base_url=api_base_url, mcp_sse_url=mcp_sse_url)
+    mcp_http_url = os.getenv("MCP_HTTP_URL", f"{api_base_url}/mcp/http")
+    return ServiceConfig(api_base_url=api_base_url, mcp_http_url=mcp_http_url)
 
 
 @pytest.fixture(scope="session")
