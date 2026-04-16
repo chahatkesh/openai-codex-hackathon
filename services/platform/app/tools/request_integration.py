@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import json
+
+from sqlalchemy import select
+
 from app.db import async_session
+from app.models import ToolDefinition
 from app.services.integrations_service import (
     IntegrationForwardPayload,
     build_discovery_docs_url,
     create_integration_job,
     forward_job_non_blocking,
 )
+from app.services.manifest_service import build_manifest_pointer, load_manifest
 from app.tools import registry
 
 
@@ -22,6 +28,27 @@ async def execute(
     This is the generic fallback tool Codex should call when the desired
     provider/capability is not already exposed in the FuseKit catalog.
     """
+    if requested_tool_name:
+        async with async_session() as session:
+            result = await session.execute(
+                select(ToolDefinition).where(
+                    ToolDefinition.name == requested_tool_name,
+                    ToolDefinition.status == "live",
+                )
+            )
+            existing = result.scalar_one_or_none()
+            if existing is not None:
+                manifest = load_manifest(existing)
+                return json.dumps(
+                    {
+                        "status": "already_available",
+                        "message": f"Tool '{requested_tool_name}' is already live.",
+                        "manifest": manifest,
+                        "pointer": build_manifest_pointer(requested_tool_name),
+                    },
+                    indent=2,
+                )
+
     discovery_url = docs_url or build_discovery_docs_url(
         requested_tool_name or capability_description
     )
@@ -44,11 +71,18 @@ async def execute(
     )
 
     requested_label = requested_tool_name or capability_description
-    return (
-        f"Integration requested for '{requested_label}'. "
-        f"Job ID: {job.id}. "
-        f"Discovery URL: {job.docs_url}. "
-        "FuseKit will attempt discovery, code generation, testing, and publish."
+    return json.dumps(
+        {
+            "status": "integration_requested",
+            "message": (
+                f"Integration requested for '{requested_label}'. "
+                "FuseKit will attempt discovery, code generation, testing, and publish."
+            ),
+            "job_id": str(job.id),
+            "docs_url": job.docs_url,
+            "requested_tool_name": job.requested_tool_name,
+        },
+        indent=2,
     )
 
 

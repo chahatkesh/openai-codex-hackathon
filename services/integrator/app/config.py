@@ -11,6 +11,15 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
     platform_api_url: str = "http://localhost:8000"
     max_fix_attempts: int = 3
+    docs_fetch_timeout_seconds: int = 30
+    docs_fetch_max_pages: int = 5
+    docs_fetch_max_bytes: int = 2_000_000
+    docs_fetch_user_agent: str = "FuseKit-Integrator/1.0"
+    docs_fetch_render_js: bool = True
+    docs_fetch_render_timeout_seconds: int = 20
+    docs_fetch_parse_pdf: bool = True
+    docs_fetch_parse_openapi: bool = True
+    docs_fetch_extract_code_blocks: bool = True
 
     model_config = {"env_file": str(_ENV_FILE), "env_file_encoding": "utf-8", "extra": "ignore"}
 

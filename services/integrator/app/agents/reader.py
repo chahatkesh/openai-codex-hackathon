@@ -20,7 +20,7 @@ async def run_reader(docs_url: str, discovery: DiscoveryResult, llm: LLMClient) 
     prompt = (
         f"Docs URL: {docs_url}\n"
         f"Discovery context: {discovery.model_dump_json()}\n\n"
-        f"Documentation text:\n{bundle[:28000]}"
+        f"Documentation bundle:\n{bundle[:28000]}"
     )
     data = await llm.generate_json(SYSTEM_PROMPT, prompt)
     if "provider_name" not in data:

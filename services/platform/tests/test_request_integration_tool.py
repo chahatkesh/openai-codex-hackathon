@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 import pytest
 
 from app.tools import request_integration
-from tests.helpers import FakeSession
+from app.models import ToolDefinition
+from tests.helpers import DummyResult, FakeSession
 
 
 class _SessionCM:
@@ -52,8 +54,10 @@ async def test_request_integration_creates_job_and_forwards(monkeypatch):
         capability_description="Send Slack messages to a channel",
         requested_tool_name="send_slack_message",
     )
+    payload = json.loads(response)
 
-    assert str(created_job_id) in response
+    assert payload["status"] == "integration_requested"
+    assert payload["job_id"] == str(created_job_id)
     assert captured["job_id"] == str(created_job_id)
     assert captured["requested_tool_name"] == "send_slack_message"
     assert "send%20slack%20message+API+documentation" in captured["docs_url"]
@@ -90,3 +94,38 @@ async def test_request_integration_prefers_explicit_docs_url(monkeypatch):
     )
 
     assert captured["docs_url"] == "https://resend.com/docs/api-reference/emails"
+
+
+@pytest.mark.asyncio
+async def test_request_integration_returns_manifest_when_tool_exists(monkeypatch):
+    existing_tool = ToolDefinition(
+        id=uuid.uuid4(),
+        name="send_email",
+        description="Send email",
+        provider="resend",
+        cost_per_call=10,
+        status="live",
+        input_schema={"type": "object"},
+        output_schema={"type": "object"},
+        category="communication",
+        source="seed",
+        version=1,
+        implementation_module="app.tools.send_email",
+    )
+
+    fake_session = FakeSession(execute_results=[DummyResult(existing_tool)])
+
+    def fake_async_session_factory():
+        return _SessionCM(fake_session)
+
+    monkeypatch.setattr(request_integration, "async_session", fake_async_session_factory)
+
+    response = await request_integration.execute(
+        capability_description="Send email",
+        requested_tool_name="send_email",
+    )
+    payload = json.loads(response)
+
+    assert payload["status"] == "already_available"
+    assert payload["manifest"]["tool_name"] == "send_email"
+    assert payload["pointer"]["manifest_path"].endswith("send_email.json")

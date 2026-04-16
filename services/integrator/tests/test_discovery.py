@@ -19,10 +19,10 @@ class FakeLLM:
 
 @pytest.mark.asyncio
 async def test_discovery_returns_structured_result(monkeypatch):
-    async def fake_fetch_url(_url: str) -> str:
-        return "<html><body><h1>Example API</h1></body></html>"
+    async def fake_fetch_docs_bundle(_url: str, max_pages: int = 2) -> str:  # noqa: ARG001
+        return "Title: Example API\n\nAuth hints:\n- Bearer token"
 
-    monkeypatch.setattr("app.agents.discovery.fetch_url", fake_fetch_url)
+    monkeypatch.setattr("app.agents.discovery.fetch_docs_bundle", fake_fetch_docs_bundle)
 
     result = await run_discovery("https://example.com/docs", FakeLLM())
 

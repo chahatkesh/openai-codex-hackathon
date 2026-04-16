@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -8,12 +9,57 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import IntegrationJob, ToolDefinition
-from app.schemas import GeneratedTool, TestResult
+from app.schemas import APISpecification, DiscoveryResult, GeneratedTool, TestResult
 
 logger = logging.getLogger("fusekit.integrator.publisher")
 
 # Must match DYNAMIC_TOOLS_DIR in services/platform/app/tools/registry.py
 DYNAMIC_TOOLS_DIR = Path("/tmp/fusekit_dynamic_tools")
+MANIFESTS_DIR = DYNAMIC_TOOLS_DIR / "manifests"
+
+
+def _manifest_payload(
+    job: IntegrationJob,
+    generated: GeneratedTool,
+    test_result: TestResult,
+    discovery: DiscoveryResult,
+    api_spec: APISpecification,
+    tool: ToolDefinition,
+) -> dict:
+    return {
+        "tool_name": tool.name,
+        "provider": generated.provider,
+        "status": generated.status,
+        "category": generated.category,
+        "source": "pipeline",
+        "version": generated.version,
+        "description": generated.description,
+        "docs_url": job.docs_url,
+        "integration_job": {
+            "job_id": str(job.id),
+            "triggered_by": job.triggered_by,
+            "requested_tool_name": job.requested_tool_name,
+            "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        },
+        "discovery": discovery.model_dump(),
+        "api_spec": api_spec.model_dump(),
+        "tool_definition": {
+            "id": str(tool.id),
+            "cost_per_call": tool.cost_per_call,
+            "input_schema": tool.input_schema,
+            "output_schema": tool.output_schema,
+            "implementation_module": tool.implementation_module,
+        },
+        "runtime_artifacts": {
+            "python_module_path": str(DYNAMIC_TOOLS_DIR / f"{tool.name}.py"),
+            "manifest_path": str(MANIFESTS_DIR / f"{tool.name}.json"),
+        },
+        "test_result": {
+            "success": test_result.success,
+            "attempts": test_result.attempts,
+            "error_log": test_result.error_log,
+        },
+    }
 
 
 async def publish_tool(
@@ -21,6 +67,9 @@ async def publish_tool(
     job: IntegrationJob,
     generated: GeneratedTool,
     test_result: TestResult,
+    *,
+    discovery: DiscoveryResult,
+    api_spec: APISpecification,
 ) -> ToolDefinition | None:
     if not test_result.success:
         job.status = "failed"
@@ -76,8 +125,14 @@ async def publish_tool(
         tool_file = DYNAMIC_TOOLS_DIR / f"{tool.name}.py"
         tool_file.write_text(generated.python_code, encoding="utf-8")
         logger.info("dynamic_tool_written name=%s path=%s", tool.name, tool_file)
+
+        MANIFESTS_DIR.mkdir(parents=True, exist_ok=True)
+        manifest = _manifest_payload(job, generated, test_result, discovery, api_spec, tool)
+        manifest_file = MANIFESTS_DIR / f"{tool.name}.json"
+        manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        logger.info("dynamic_manifest_written name=%s path=%s", tool.name, manifest_file)
     except Exception as exc:
         # Non-fatal — tool is in DB, platform will surface a clear error
-        logger.error("dynamic_tool_write_failed name=%s error=%s", tool.name, exc)
+        logger.error("dynamic_artifact_write_failed name=%s error=%s", tool.name, exc)
 
     return tool

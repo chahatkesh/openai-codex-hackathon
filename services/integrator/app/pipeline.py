@@ -75,7 +75,14 @@ async def execute_pipeline(context: PipelineContext, session_factory, llm: LLMCl
                 job = await _load_job(session, context.job_id)
                 job.current_stage = "publish"
                 await session.commit()
-                await publish_tool(session, job, generated, test_result)
+                await publish_tool(
+                    session,
+                    job,
+                    generated,
+                    test_result,
+                    discovery=discovery,
+                    api_spec=api_spec,
+                )
 
     except Exception as exc:
         logger.exception("pipeline_failed job_id=%s", context.job_id)
