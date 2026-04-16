@@ -107,6 +107,23 @@ def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
         "path": runtime_path,
         "url": f"{public_base_url}{runtime_path}",
     }
+    manifest["runtime_response"] = {
+        "envelope": {
+            "type": "object",
+            "properties": {
+                "tool_name": {"type": "string"},
+                "data": tool.output_schema,
+                "data_format": {"type": "string", "enum": ["json", "text"]},
+                "raw_result": {"type": "string"},
+                "balance_after": {"type": "integer"},
+            },
+            "required": ["tool_name", "data_format", "raw_result"],
+        },
+        "payload_field": "data",
+        "payload_encoding": "json_or_null",
+        "raw_payload_field": "raw_result",
+        "decoded_output_schema": tool.output_schema,
+    }
     manifest["billing"] = {
         "cost_per_call": tool.cost_per_call,
         "currency": "credits",

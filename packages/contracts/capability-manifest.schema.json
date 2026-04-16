@@ -13,6 +13,7 @@
     "version",
     "base_url",
     "runtime_endpoint",
+    "runtime_response",
     "billing",
     "auth",
     "input_schema",
@@ -42,6 +43,17 @@
         "method": { "type": "string" },
         "path": { "type": "string" },
         "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "runtime_response": {
+      "type": "object",
+      "required": ["envelope", "payload_field", "payload_encoding", "raw_payload_field", "decoded_output_schema"],
+      "properties": {
+        "envelope": { "type": "object" },
+        "payload_field": { "type": "string" },
+        "payload_encoding": { "type": "string" },
+        "raw_payload_field": { "type": "string" },
+        "decoded_output_schema": { "type": "object" }
       }
     },
     "billing": {

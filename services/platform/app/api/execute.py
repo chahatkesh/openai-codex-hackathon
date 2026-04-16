@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Body, Header, HTTPException
 
 from app.services.capabilities_service import (
@@ -21,6 +23,13 @@ def _parse_bearer_token(authorization: str | None) -> str:
     if authorization.startswith(prefix):
         return authorization[len(prefix):].strip() or DEMO_USER_TOKEN
     return authorization.strip() or DEMO_USER_TOKEN
+
+
+def _decode_result_payload(text: str) -> tuple[str, object | None]:
+    try:
+        return "json", json.loads(text)
+    except Exception:
+        return "text", None
 
 
 @router.post("/{tool_name}")
@@ -60,8 +69,12 @@ async def execute_tool_http(
             },
         )
 
+    result_format, decoded = _decode_result_payload(result.text)
     return {
         "tool_name": result.tool_name,
+        "data": decoded,
+        "data_format": result_format,
+        "raw_result": result.text,
         "result": result.text,
         "balance_after": result.balance_after,
     }

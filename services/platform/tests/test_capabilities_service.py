@@ -40,6 +40,8 @@ def test_build_runtime_manifest_contains_runtime_contract():
     assert manifest["base_url"] == "http://localhost:8000"
     assert manifest["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
     assert manifest["runtime_endpoint"]["url"] == "http://localhost:8000/api/execute/get_producthunt"
+    assert manifest["runtime_response"]["payload_field"] == "data"
+    assert manifest["runtime_response"]["raw_payload_field"] == "raw_result"
     assert manifest["billing"]["cost_per_call"] == 10
     assert manifest["auth"]["type"] == "bearer"
     assert manifest["auth"]["token_env_var"] == "FUSEKIT_TOKEN"
