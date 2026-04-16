@@ -22,3 +22,9 @@ export function getTrackedJobIds(): string[] {
     return [];
   }
 }
+
+export function removeTrackedJobId(jobId: string) {
+  if (typeof window === "undefined") return;
+  const next = getTrackedJobIds().filter((id) => id !== jobId);
+  window.localStorage.setItem(JOB_IDS_KEY, JSON.stringify(next));
+}
