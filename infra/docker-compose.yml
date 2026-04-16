@@ -15,6 +15,29 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done &&
+      mc mb -p local/fusekit-artifacts || true
+      "
+
   platform:
     build:
       context: ..
@@ -25,11 +48,20 @@ services:
       DATABASE_URL: "postgresql+asyncpg://fusekit:fusekit@postgres:5432/fusekit"
       DATABASE_URL_SYNC: "postgresql://fusekit:fusekit@postgres:5432/fusekit"
       INTEGRATOR_URL: "http://integrator:8001"
+      ARTIFACT_BACKEND: "s3"
+      ARTIFACT_S3_ENDPOINT_URL: "http://minio:9000"
+      ARTIFACT_BUCKET: "fusekit-artifacts"
+      ARTIFACT_S3_ACCESS_KEY: "minioadmin"
+      ARTIFACT_S3_SECRET_KEY: "minioadmin"
     env_file:
       - ../.env
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
+      minio-init:
+        condition: service_started
     volumes:
       - ../services/platform:/app
     command: >
@@ -45,11 +77,20 @@ services:
     environment:
       DATABASE_URL: "postgresql+asyncpg://fusekit:fusekit@postgres:5432/fusekit"
       PLATFORM_API_URL: "http://platform:8000"
+      ARTIFACT_BACKEND: "s3"
+      ARTIFACT_S3_ENDPOINT_URL: "http://minio:9000"
+      ARTIFACT_BUCKET: "fusekit-artifacts"
+      ARTIFACT_S3_ACCESS_KEY: "minioadmin"
+      ARTIFACT_S3_SECRET_KEY: "minioadmin"
     env_file:
       - ../.env
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
+      minio-init:
+        condition: service_started
     volumes:
       - ../services/integrator:/app
     command: >
@@ -58,3 +99,4 @@ services:
 
 volumes:
   pgdata:
+  minio-data:

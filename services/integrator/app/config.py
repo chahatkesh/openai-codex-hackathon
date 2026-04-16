@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     github_default_base_branch: str = ""
     github_branch_prefix: str = "fusekit/publish"
     github_draft_prs: bool = True
+    artifact_backend: str = "local"
+    artifact_bucket: str = "fusekit-artifacts"
+    artifact_s3_endpoint_url: str = "http://localhost:9000"
+    artifact_s3_access_key: str = "minioadmin"
+    artifact_s3_secret_key: str = "minioadmin"
+    artifact_s3_region: str = "us-east-1"
+    artifact_s3_force_path_style: bool = True
 
     model_config = {"env_file": str(_ENV_FILE), "env_file_encoding": "utf-8", "extra": "ignore"}
 

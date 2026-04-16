@@ -8,7 +8,14 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import IntegrationJob, ToolDefinition
+from app.services.artifact_store import (
+    artifact_key_for_manifest,
+    artifact_key_for_module,
+    artifact_uri_for_key,
+    upload_text,
+)
 from app.schemas import APISpecification, DiscoveryResult, GeneratedTool, TestResult
 
 logger = logging.getLogger("fusekit.integrator.publisher")
@@ -16,6 +23,40 @@ logger = logging.getLogger("fusekit.integrator.publisher")
 # Must match DYNAMIC_TOOLS_DIR in services/platform/app/tools/registry.py
 DYNAMIC_TOOLS_DIR = Path("/tmp/fusekit_dynamic_tools")
 MANIFESTS_DIR = DYNAMIC_TOOLS_DIR / "manifests"
+
+
+def _build_example_request(schema: dict) -> dict:
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
+    example: dict = {}
+
+    for field in required:
+        prop = properties.get(field, {})
+        if "default" in prop:
+            example[field] = prop["default"]
+            continue
+        prop_type = prop.get("type")
+        if prop_type == "string":
+            if "url" in field:
+                example[field] = "https://example.com"
+            elif "email" in field or field == "to":
+                example[field] = "demo@example.com"
+            elif "phone" in field:
+                example[field] = "+10000000000"
+            else:
+                example[field] = "example"
+        elif prop_type == "integer":
+            example[field] = 1
+        elif prop_type == "boolean":
+            example[field] = False
+        elif prop_type == "array":
+            example[field] = []
+        elif prop_type == "object":
+            example[field] = {}
+        else:
+            example[field] = "example"
+
+    return example
 
 
 def _manifest_payload(
@@ -26,14 +67,52 @@ def _manifest_payload(
     api_spec: APISpecification,
     tool: ToolDefinition,
 ) -> dict:
+    platform_api_url = settings.platform_api_url.rstrip("/")
+    runtime_path = f"/api/execute/{tool.name}"
+    manifest_http_path = f"/api/capabilities/{tool.name}/manifest"
     return {
         "tool_name": tool.name,
+        "name": tool.name,
         "provider": generated.provider,
         "status": generated.status,
         "category": generated.category,
         "source": "pipeline",
         "version": generated.version,
         "description": generated.description,
+        "base_url": platform_api_url,
+        "runtime_endpoint": {
+            "method": "POST",
+            "path": runtime_path,
+            "url": f"{platform_api_url}{runtime_path}",
+        },
+        "billing": {
+            "cost_per_call": tool.cost_per_call,
+            "currency": "credits",
+        },
+        "auth": {
+            "type": "bearer",
+            "header": "Authorization",
+            "format": "Bearer <fusekit_token>",
+            "token_env_var": "FUSEKIT_TOKEN",
+            "local_development_token": "demo-token-fusekit-2026",
+        },
+        "example_request": _build_example_request(tool.input_schema),
+        "manifest_endpoint": {
+            "method": "GET",
+            "path": manifest_http_path,
+            "url": f"{platform_api_url}{manifest_http_path}",
+        },
+        "manifest_pointer": {
+            "tool_name": tool.name,
+            "manifest_path": str(MANIFESTS_DIR / f"{tool.name}.json"),
+            "artifact_key": artifact_key_for_manifest(tool.name),
+            "artifact_uri": artifact_uri_for_key(artifact_key_for_manifest(tool.name)),
+            "http_path": manifest_http_path,
+            "http_url": f"{platform_api_url}{manifest_http_path}",
+        },
+        "input_schema": tool.input_schema,
+        "output_schema": tool.output_schema,
+        "implementation_module": tool.implementation_module,
         "docs_url": job.docs_url,
         "integration_job": {
             "job_id": str(job.id),
@@ -53,6 +132,10 @@ def _manifest_payload(
         "runtime_artifacts": {
             "python_module_path": str(DYNAMIC_TOOLS_DIR / f"{tool.name}.py"),
             "manifest_path": str(MANIFESTS_DIR / f"{tool.name}.json"),
+            "python_module_key": artifact_key_for_module(tool.name),
+            "manifest_key": artifact_key_for_manifest(tool.name),
+            "python_module_uri": artifact_uri_for_key(artifact_key_for_module(tool.name)),
+            "manifest_uri": artifact_uri_for_key(artifact_key_for_manifest(tool.name)),
         },
         "test_result": {
             "success": test_result.success,
@@ -131,6 +214,17 @@ async def publish_tool(
         manifest_file = MANIFESTS_DIR / f"{tool.name}.json"
         manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         logger.info("dynamic_manifest_written name=%s path=%s", tool.name, manifest_file)
+
+        upload_text(
+            artifact_key_for_module(tool.name),
+            generated.python_code,
+            "text/x-python",
+        )
+        upload_text(
+            artifact_key_for_manifest(tool.name),
+            json.dumps(manifest, indent=2),
+            "application/json",
+        )
     except Exception as exc:
         # Non-fatal — tool is in DB, platform will surface a clear error
         logger.error("dynamic_artifact_write_failed name=%s error=%s", tool.name, exc)

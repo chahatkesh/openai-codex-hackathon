@@ -45,5 +45,8 @@ async def test_get_capability_manifest_returns_json_manifest(monkeypatch):
     manifest = json.loads(payload)
 
     assert manifest["name"] == "get_producthunt"
+    assert manifest["base_url"] == "http://localhost:8000"
     assert manifest["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
+    assert manifest["manifest_endpoint"]["url"] == "http://localhost:8000/api/capabilities/get_producthunt/manifest"
+    assert manifest["auth"]["token_env_var"] == "FUSEKIT_TOKEN"
     assert manifest["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")

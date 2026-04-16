@@ -37,10 +37,16 @@ def test_build_runtime_manifest_contains_runtime_contract():
     manifest = manifest_service.build_runtime_manifest(_tool())
 
     assert manifest["name"] == "get_producthunt"
+    assert manifest["base_url"] == "http://localhost:8000"
     assert manifest["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
+    assert manifest["runtime_endpoint"]["url"] == "http://localhost:8000/api/execute/get_producthunt"
     assert manifest["billing"]["cost_per_call"] == 10
     assert manifest["auth"]["type"] == "bearer"
+    assert manifest["auth"]["token_env_var"] == "FUSEKIT_TOKEN"
+    assert manifest["auth"]["local_development_token"] == "demo-token-fusekit-2026"
     assert manifest["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
+    assert manifest["manifest_pointer"]["artifact_key"] == "manifests/get_producthunt.json"
+    assert manifest["manifest_pointer"]["http_url"] == "http://localhost:8000/api/capabilities/get_producthunt/manifest"
 
 
 @pytest.mark.asyncio

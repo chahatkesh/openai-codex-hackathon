@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CapabilityManifest",
+  "description": "Canonical build-time contract UFC uses to wire deployed apps to FuseKit runtime capabilities.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "provider",
+    "status",
+    "category",
+    "source",
+    "version",
+    "base_url",
+    "runtime_endpoint",
+    "billing",
+    "auth",
+    "input_schema",
+    "output_schema",
+    "example_request",
+    "manifest_endpoint",
+    "manifest_pointer"
+  ],
+  "properties": {
+    "tool_name": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "provider": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["live", "pending_credentials", "deprecated"]
+    },
+    "category": { "type": "string" },
+    "source": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "base_url": { "type": "string", "format": "uri" },
+    "runtime_endpoint": {
+      "type": "object",
+      "required": ["method", "path", "url"],
+      "properties": {
+        "method": { "type": "string" },
+        "path": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "billing": {
+      "type": "object",
+      "required": ["cost_per_call", "currency"],
+      "properties": {
+        "cost_per_call": { "type": "integer", "minimum": 1 },
+        "currency": { "type": "string" }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["type", "header", "format", "token_env_var"],
+      "properties": {
+        "type": { "type": "string" },
+        "header": { "type": "string" },
+        "format": { "type": "string" },
+        "token_env_var": { "type": "string" },
+        "local_development_token": { "type": "string" }
+      }
+    },
+    "input_schema": { "type": "object" },
+    "output_schema": { "type": "object" },
+    "example_request": { "type": "object" },
+    "implementation_module": { "type": "string" },
+    "manifest_endpoint": {
+      "type": "object",
+      "required": ["method", "path", "url"],
+      "properties": {
+        "method": { "type": "string" },
+        "path": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "manifest_pointer": {
+      "type": "object",
+      "required": ["tool_name", "manifest_path", "http_path", "http_url"],
+      "properties": {
+        "tool_name": { "type": "string" },
+        "manifest_path": { "type": "string" },
+        "artifact_key": { "type": "string" },
+        "artifact_uri": { "type": "string" },
+        "http_path": { "type": "string" },
+        "http_url": { "type": "string", "format": "uri" }
+      }
+    },
+    "docs_url": { "type": "string" },
+    "discovery": { "type": "object" },
+    "api_spec": { "type": "object" },
+    "tool_definition": { "type": "object" },
+    "runtime_artifacts": { "type": "object" },
+    "test_result": { "type": "object" }
+  }
+}

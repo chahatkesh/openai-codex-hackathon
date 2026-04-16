@@ -6,6 +6,8 @@ import logging
 from pathlib import Path
 from typing import Any, Callable, Coroutine
 
+from app.services.artifact_store import artifact_key_for_module, download_file
+
 logger = logging.getLogger("fusekit.registry")
 
 # Map of tool_name -> async execute function
@@ -30,6 +32,8 @@ def load_dynamic(name: str) -> Callable[..., Coroutine[Any, Any, str]] | None:
     return it so subsequent calls skip the file-system lookup.
     """
     tool_file = DYNAMIC_TOOLS_DIR / f"{name}.py"
+    if not tool_file.exists():
+        download_file(artifact_key_for_module(name), tool_file)
     if not tool_file.exists():
         return None
 

@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.api.capabilities import get_capability_manifest_http
+from app.api.capabilities import get_capability_manifest_http, list_capabilities
 from app.models import ToolDefinition
+from tests.helpers import DummyResult, FakeSession
 
 
 def _tool(name: str = "get_producthunt") -> ToolDefinition:
@@ -45,3 +46,15 @@ async def test_get_capability_manifest_http_returns_runtime_contract(monkeypatch
     assert payload["name"] == "get_producthunt"
     assert payload["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
     assert payload["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
+    assert payload["manifest_endpoint"]["url"] == "http://localhost:8000/api/capabilities/get_producthunt/manifest"
+
+
+@pytest.mark.asyncio
+async def test_list_capabilities_returns_runtime_metadata():
+    session = FakeSession(execute_results=[DummyResult([_tool("get_producthunt"), _tool("send_sms")])])
+
+    payload = await list_capabilities(session=session)
+
+    assert len(payload) == 2
+    assert payload[0]["runtime_endpoint"]["url"].startswith("http://localhost:8000/api/execute/")
+    assert payload[0]["manifest_endpoint"]["url"].startswith("http://localhost:8000/api/capabilities/")

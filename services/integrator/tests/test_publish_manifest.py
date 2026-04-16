@@ -72,5 +72,11 @@ async def test_publish_tool_writes_manifest_and_runtime(tmp_path, session_factor
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["tool_name"] == "send_slack_message"
+    assert manifest["name"] == "send_slack_message"
+    assert manifest["base_url"] == "http://localhost:8000"
     assert manifest["docs_url"] == "https://docs.example.com"
     assert manifest["api_spec"]["base_url"] == "https://slack.com/api"
+    assert manifest["runtime_endpoint"]["url"] == "http://localhost:8000/api/execute/send_slack_message"
+    assert manifest["manifest_endpoint"]["url"] == "http://localhost:8000/api/capabilities/send_slack_message/manifest"
+    assert manifest["auth"]["token_env_var"] == "FUSEKIT_TOKEN"
+    assert manifest["manifest_pointer"]["artifact_key"] == "manifests/send_slack_message.json"

@@ -23,6 +23,15 @@ Each FuseKit capability should be treated as a reusable platform primitive with:
 - an HTTP execution endpoint used by the deployed app
 - billing metadata used for wallet deduction
 
+The canonical manifest contract is defined in:
+
+- `packages/contracts/capability-manifest.schema.json`
+
+Artifact publication should support:
+
+- local temp-file fallback for development
+- S3-compatible storage for durable runtime artifacts and manifests
+
 ## Build-Time Flow
 
 1. UFC connects to FuseKit via MCP.
@@ -46,6 +55,7 @@ FuseKit should have one shared internal execution service used by:
 
 - MCP `tools/call`
 - HTTP `/api/capabilities/{tool_name}/manifest`
+- HTTP `/api/capabilities`
 - HTTP `/api/execute/{tool_name}`
 
 That internal executor is responsible for:
@@ -55,3 +65,11 @@ That internal executor is responsible for:
 - runtime executor lookup
 - success/error logging
 - consistent error shapes
+
+## Auth Contract
+
+Capability manifests should give UFC enough information to scaffold a working app:
+
+- bearer auth header format
+- token environment variable name (`FUSEKIT_TOKEN`)
+- local development token only for demo/dev environments

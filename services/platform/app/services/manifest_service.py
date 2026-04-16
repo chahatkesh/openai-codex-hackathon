@@ -4,7 +4,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.config import settings
 from app.models import ToolDefinition
+from app.services.artifact_store import (
+    artifact_key_for_manifest,
+    artifact_uri_for_key,
+    download_text,
+)
 
 DYNAMIC_TOOLS_DIR = Path("/tmp/fusekit_dynamic_tools")
 MANIFESTS_DIR = DYNAMIC_TOOLS_DIR / "manifests"
@@ -16,9 +22,12 @@ def manifest_path_for(tool_name: str) -> Path:
 
 def build_manifest_pointer(tool_name: str) -> dict[str, str]:
     path = manifest_path_for(tool_name)
+    s3_key = artifact_key_for_manifest(tool_name)
     return {
         "tool_name": tool_name,
         "manifest_path": str(path),
+        "artifact_key": s3_key,
+        "artifact_uri": artifact_uri_for_key(s3_key),
     }
 
 
@@ -76,6 +85,9 @@ def synthesize_manifest(tool: ToolDefinition) -> dict[str, Any]:
 def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
     base = load_manifest(tool)
     manifest = dict(base)
+    public_base_url = settings.public_base_url.rstrip("/")
+    runtime_path = f"/api/execute/{tool.name}"
+    manifest_path = f"/api/capabilities/{tool.name}/manifest"
 
     manifest["tool_name"] = tool.name
     manifest["name"] = tool.name
@@ -88,9 +100,11 @@ def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
     manifest["input_schema"] = tool.input_schema
     manifest["output_schema"] = tool.output_schema
     manifest["implementation_module"] = tool.implementation_module
+    manifest["base_url"] = public_base_url
     manifest["runtime_endpoint"] = {
         "method": "POST",
-        "path": f"/api/execute/{tool.name}",
+        "path": runtime_path,
+        "url": f"{public_base_url}{runtime_path}",
     }
     manifest["billing"] = {
         "cost_per_call": tool.cost_per_call,
@@ -100,9 +114,20 @@ def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
         "type": "bearer",
         "header": "Authorization",
         "format": "Bearer <fusekit_token>",
+        "token_env_var": "FUSEKIT_TOKEN",
+        "local_development_token": settings.demo_auth_token,
     }
     manifest["example_request"] = _build_example_request(tool.input_schema)
-    manifest["manifest_pointer"] = build_manifest_pointer(tool.name)
+    manifest["manifest_endpoint"] = {
+        "method": "GET",
+        "path": manifest_path,
+        "url": f"{public_base_url}{manifest_path}",
+    }
+    manifest["manifest_pointer"] = {
+        **build_manifest_pointer(tool.name),
+        "http_path": manifest_path,
+        "http_url": f"{public_base_url}{manifest_path}",
+    }
     return manifest
 
 
@@ -111,6 +136,12 @@ def load_manifest(tool: ToolDefinition) -> dict[str, Any]:
     if path.exists():
         try:
             return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    payload = download_text(artifact_key_for_manifest(tool.name))
+    if payload:
+        try:
+            return json.loads(payload)
         except Exception:
             pass
     return synthesize_manifest(tool)
