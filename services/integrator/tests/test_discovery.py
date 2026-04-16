@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.docs_fetcher import DocsBundle, DocsPage
 from app.agents.discovery import run_discovery
 
 
@@ -19,10 +20,19 @@ class FakeLLM:
 
 @pytest.mark.asyncio
 async def test_discovery_returns_structured_result(monkeypatch):
-    async def fake_fetch_url(_url: str) -> str:
-        return "<html><body><h1>Example API</h1></body></html>"
+    async def fake_fetch_bundle(_url: str, max_pages: int = 1):  # noqa: ARG001
+        return DocsBundle(
+            provider="basic",
+            pages=[
+                DocsPage(
+                    url="https://example.com/docs",
+                    title="Example API",
+                    markdown="Example API docs",
+                )
+            ],
+        )
 
-    monkeypatch.setattr("app.agents.discovery.fetch_url", fake_fetch_url)
+    monkeypatch.setattr("app.agents.discovery.fetch_docs_bundle_result", fake_fetch_bundle)
 
     result = await run_discovery("https://example.com/docs", FakeLLM())
 
