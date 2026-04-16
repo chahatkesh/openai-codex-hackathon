@@ -3,7 +3,7 @@
 import type { CatalogItem, IntegrationJobStatus } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, CheckCircle2, FileSearch, Radio, Sparkles } from "lucide-react";
+import { Activity, CheckCircle2, FileSearch, Radio, Sparkles, Wrench } from "lucide-react";
 
 type Props = {
   recentTools: CatalogItem[];
@@ -14,6 +14,7 @@ const pipelineSteps = [
   { label: "Discovery", color: "bg-[color:var(--thinking)]", icon: FileSearch },
   { label: "Reader", color: "bg-[color:var(--read)]", icon: Radio },
   { label: "Codegen", color: "bg-[color:var(--edit)]", icon: Activity },
+  { label: "Test_fix", color: "bg-[color:var(--gold)]", icon: Wrench },
   { label: "Publish", color: "bg-[color:var(--grep)]", icon: CheckCircle2 },
 ];
 
@@ -37,7 +38,7 @@ export function LiveFeed({ recentTools, jobStatuses }: Props) {
               <StatusBadge status={status.status} />
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-4">
+            <div className="mt-5 grid gap-3 md:grid-cols-5">
               {pipelineSteps.map((step) => {
                 const Icon = step.icon;
                 const active = (status.current_stage ?? "queued").toLowerCase().includes(step.label.toLowerCase());

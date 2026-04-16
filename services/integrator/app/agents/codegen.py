@@ -23,6 +23,12 @@ def _sanitize_tool_name(name: str) -> str:
     return raw
 
 
+def _requires_credentials(api_spec: APISpecification) -> bool:
+    auth = api_spec.auth or {}
+    auth_type = str(auth.get("type") or auth.get("method") or "").strip().lower()
+    return auth_type not in {"", "none", "unknown"}
+
+
 async def run_codegen(
     api_spec: APISpecification,
     requested_tool_name: str | None,
@@ -47,7 +53,7 @@ async def run_codegen(
     data["name"] = _sanitize_tool_name(str(data["name"]))
     data.setdefault("source", "pipeline")
     data.setdefault("version", 1)
-    data.setdefault("status", "live")
+    data.setdefault("status", "pending_credentials" if _requires_credentials(api_spec) else "live")
     data.setdefault("category", "other")
     data.setdefault("cost_per_call", 10)
     data.setdefault("provider", api_spec.provider_name)
@@ -58,6 +64,8 @@ async def run_codegen(
     )
     data.setdefault("output_schema", {"type": "object", "properties": {"result": {"type": "string"}}})
     data.setdefault("implementation_module", f"app.tools.{data['name']}.execute")
+    if _requires_credentials(api_spec) and data.get("status") == "live":
+        data["status"] = "pending_credentials"
 
     code = data.get("python_code", "")
     if "async def execute" not in code:

@@ -37,3 +37,12 @@ async def test_codegen_returns_valid_generated_tool():
     assert generated.name == "email_sender"
     assert "async def execute" in generated.python_code
     assert generated.source == "pipeline"
+
+
+@pytest.mark.asyncio
+async def test_codegen_marks_auth_required_tools_pending_credentials():
+    spec = APISpecification(provider_name="Example API", auth={"type": "bearer"})
+
+    generated = await run_codegen(spec, "Email Sender", FakeLLM())
+
+    assert generated.status == "pending_credentials"

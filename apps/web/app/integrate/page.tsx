@@ -11,7 +11,8 @@ const pipeline = [
   { name: "Discovery", note: "Locate auth, endpoints, and operation shape", tone: "bg-[color:var(--thinking)]" },
   { name: "Reader", note: "Extract schemas and examples from docs", tone: "bg-[color:var(--read)]" },
   { name: "Codegen", note: "Create deterministic adapter and tests", tone: "bg-[color:var(--edit)]" },
-  { name: "Publish", note: "Register the tool for tools/list", tone: "bg-[color:var(--grep)]" },
+  { name: "Test/Fix", note: "Load generated code, run execute(), and repair failures", tone: "bg-[color:var(--gold)]" },
+  { name: "Publish", note: "Register the tool, manifest, and runtime artifacts", tone: "bg-[color:var(--grep)]" },
 ];
 
 export default function IntegratePage() {
