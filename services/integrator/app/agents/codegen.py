@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import re
 
 from app.llm import LLMClient
 from app.schemas import APISpecification, GeneratedTool
@@ -12,6 +13,43 @@ name, description, provider, cost_per_call, status, category,
 input_schema, output_schema, source, version, implementation_module, python_code.
 python_code must define: async def execute(**kwargs) -> str
 """
+
+MANAGED_PROVIDER_REQUIREMENTS: dict[str, list[str]] = {
+    "twilio": ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER"],
+    "slack": ["SLACK_BOT_TOKEN"],
+    "resend": ["RESEND_API_KEY"],
+}
+
+PUBLIC_INPUT_ALLOWLIST = {
+    "to",
+    "message",
+    "text",
+    "channel",
+    "body",
+    "subject",
+    "url",
+    "query",
+    "count",
+    "category",
+    "email",
+    "recipient",
+    "title",
+    "content",
+}
+
+INTERNAL_FIELD_TOKENS = {
+    "token",
+    "secret",
+    "apikey",
+    "api_key",
+    "auth",
+    "password",
+    "accountsid",
+    "fromnumber",
+    "messagingservicesid",
+    "senderid",
+    "clientsecret",
+}
 
 
 def _sanitize_tool_name(name: str) -> str:
@@ -34,18 +72,80 @@ def _requires_credentials(api_spec: APISpecification) -> bool:
     return auth_type not in {"", "none", "unknown"}
 
 
+def _is_managed_provider(api_spec: APISpecification) -> bool:
+    return _normalize_provider_name(api_spec.provider_name) in MANAGED_PROVIDER_REQUIREMENTS
+
+
+def _field_normalized(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def _managed_secret_field_names(api_spec: APISpecification) -> set[str]:
+    provider = _normalize_provider_name(api_spec.provider_name)
+    names: set[str] = set()
+    for key in MANAGED_PROVIDER_REQUIREMENTS.get(provider, []):
+        key_lower = key.lower()
+        names.add(_field_normalized(key_lower))
+        if key_lower.startswith(f"{provider}_"):
+            names.add(_field_normalized(key_lower[len(provider) + 1 :]))
+    for key in (api_spec.auth or {}).keys():
+        names.add(_field_normalized(key))
+    return names
+
+
+def _sanitize_public_input_schema(schema: dict, api_spec: APISpecification) -> dict:
+    if not _is_managed_provider(api_spec):
+        return schema
+
+    properties = dict(schema.get("properties", {}))
+    required = list(schema.get("required", []))
+    secret_names = _managed_secret_field_names(api_spec)
+
+    kept_properties: dict = {}
+    kept_required: list[str] = []
+    for field_name, field_schema in properties.items():
+        normalized = _field_normalized(field_name)
+        should_hide = (
+            normalized in secret_names
+            or (
+                any(token in normalized for token in INTERNAL_FIELD_TOKENS)
+                and normalized not in PUBLIC_INPUT_ALLOWLIST
+            )
+        )
+        if should_hide:
+            continue
+        kept_properties[field_name] = field_schema
+        if field_name in required:
+            kept_required.append(field_name)
+
+    next_schema = dict(schema)
+    next_schema["properties"] = kept_properties
+    next_schema["required"] = kept_required
+    return next_schema
+
+
 def _managed_provider_prompt(api_spec: APISpecification) -> str:
     provider = _normalize_provider_name(api_spec.provider_name)
-    if provider == "twilio":
-        return (
+    if provider in MANAGED_PROVIDER_REQUIREMENTS:
+        requirement_list = ", ".join(MANAGED_PROVIDER_REQUIREMENTS[provider])
+        base = (
             "\nManaged provider policy:\n"
-            "- Twilio is credential-managed by FuseKit.\n"
+            f"- {api_spec.provider_name} is credential-managed by FuseKit.\n"
+            "- Do NOT expose provider secrets, auth tokens, API keys, or provider-owned configuration in the public input schema.\n"
+            "- The public FuseKit-facing schema must only expose end-user inputs that the deployed app should provide.\n"
+            "- Resolve provider credentials internally at runtime using app.services.provider_credentials.get_provider_credentials(provider_name).\n"
+            f"- Provider-managed credential keys stay internal to FuseKit: {requirement_list}.\n"
+        )
+    else:
+        base = ""
+    if provider == "twilio":
+        return base + (
             "- Do NOT expose AccountSid, AuthToken, From, MessagingServiceSid, or other provider-owned secrets/config in the public input schema.\n"
             "- The public FuseKit-facing schema must only expose end-user inputs: `to` and `message`.\n"
             "- Resolve Twilio credentials internally at runtime using app.services.provider_credentials.get_provider_credentials('twilio').\n"
             "- Return JSON as a string describing success/failure, e.g. {\"ok\": true, \"sid\": \"...\", \"message\": \"...\"}.\n"
         )
-    return ""
+    return base
 
 
 def _twilio_managed_tool(tool_name: str) -> dict:
@@ -145,6 +245,12 @@ def _apply_managed_provider_policy(data: dict, api_spec: APISpecification, tool_
     if provider == "twilio":
         managed = _twilio_managed_tool(tool_name)
         data.update(managed)
+        return data
+    if _is_managed_provider(api_spec):
+        data["input_schema"] = _sanitize_public_input_schema(
+            data.get("input_schema", {"type": "object", "properties": {}, "required": []}),
+            api_spec,
+        )
     return data
 
 
