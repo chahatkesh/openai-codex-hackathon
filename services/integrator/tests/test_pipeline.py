@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 
 from app.models import IntegrationJob, ToolDefinition
-from app.pipeline import execute_pipeline
+from app.pipeline import build_stage_llms, execute_pipeline
 from app.schemas import APISpecification, DiscoveryResult, GeneratedTool, PipelineContext, TestResult
 
 
@@ -65,3 +65,31 @@ async def test_pipeline_marks_job_complete(monkeypatch, session_factory, seeded_
         tool = tool_result.scalar_one_or_none()
         assert tool is not None
         assert tool.source == "pipeline"
+
+
+def test_build_stage_llms_uses_stage_specific_policies(monkeypatch):
+    created = []
+
+    class FakeLLMClient:
+        def __init__(self, api_key=None, model=None, reasoning_effort=None, role_name=None):
+            created.append(
+                {
+                    "api_key": api_key,
+                    "model": model,
+                    "reasoning_effort": reasoning_effort,
+                    "role_name": role_name,
+                }
+            )
+
+    monkeypatch.setattr("app.pipeline.LLMClient", FakeLLMClient)
+
+    stage_llms = build_stage_llms(api_key="test-key")
+
+    assert set(stage_llms.keys()) == {"discovery", "reader", "codegen", "test_fix"}
+    assert created[0]["api_key"] == "test-key"
+    assert {item["role_name"] for item in created} == {
+        "discovery",
+        "reader",
+        "codegen",
+        "test_fix",
+    }

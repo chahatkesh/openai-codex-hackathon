@@ -17,6 +17,29 @@ from app.models import IntegrationJob
 from app.publishers.db_writer import publish_tool
 from app.schemas import PipelineContext
 
+STAGE_POLICIES = {
+    "discovery": {
+        "role_name": "discovery",
+        "model": settings.discovery_model,
+        "reasoning_effort": settings.discovery_reasoning_effort,
+    },
+    "reader": {
+        "role_name": "reader",
+        "model": settings.reader_model,
+        "reasoning_effort": settings.reader_reasoning_effort,
+    },
+    "codegen": {
+        "role_name": "codegen",
+        "model": settings.codegen_model,
+        "reasoning_effort": settings.codegen_reasoning_effort,
+    },
+    "test_fix": {
+        "role_name": "test_fix",
+        "model": settings.test_fix_model,
+        "reasoning_effort": settings.test_fix_reasoning_effort,
+    },
+}
+
 
 def _trim_error(exc: Exception) -> str:
     return str(exc).strip()[:2000]
@@ -37,8 +60,35 @@ async def _set_stage(session: AsyncSession, job: IntegrationJob, stage: str) -> 
     await session.commit()
 
 
+def build_stage_llms(api_key: str | None = None) -> dict[str, LLMClient]:
+    return {
+        stage: LLMClient(
+            api_key=api_key,
+            model=policy["model"],
+            reasoning_effort=policy["reasoning_effort"],
+            role_name=policy["role_name"],
+        )
+        for stage, policy in STAGE_POLICIES.items()
+    }
+
+
+def _get_stage_llm(
+    stage: str,
+    shared_llm: LLMClient | None,
+    stage_llms: dict[str, LLMClient],
+) -> LLMClient:
+    if shared_llm is None:
+        return stage_llms[stage]
+    stage_client = getattr(shared_llm, "stage_client", None)
+    if callable(stage_client):
+        resolved = stage_client(stage)
+        if resolved is not None:
+            return resolved
+    return shared_llm
+
+
 async def execute_pipeline(context: PipelineContext, session_factory, llm: LLMClient | None = None) -> None:
-    llm_client = llm or LLMClient()
+    stage_llms = build_stage_llms()
 
     async with session_factory() as session:
         job = await _load_job(session, context.job_id)
@@ -50,25 +100,40 @@ async def execute_pipeline(context: PipelineContext, session_factory, llm: LLMCl
             async with session_factory() as session:
                 job = await _load_job(session, context.job_id)
                 await _set_stage(session, job, "discovery")
-            discovery = await run_discovery(context.docs_url, llm_client)
+            discovery = await run_discovery(
+                context.docs_url,
+                _get_stage_llm("discovery", llm, stage_llms),
+            )
 
         with StageTimer("reader", context.job_id):
             async with session_factory() as session:
                 job = await _load_job(session, context.job_id)
                 await _set_stage(session, job, "reader")
-            api_spec = await run_reader(context.docs_url, discovery, llm_client)
+            api_spec = await run_reader(
+                context.docs_url,
+                discovery,
+                _get_stage_llm("reader", llm, stage_llms),
+            )
 
         with StageTimer("codegen", context.job_id):
             async with session_factory() as session:
                 job = await _load_job(session, context.job_id)
                 await _set_stage(session, job, "codegen")
-            generated = await run_codegen(api_spec, context.requested_tool_name, llm_client)
+            generated = await run_codegen(
+                api_spec,
+                context.requested_tool_name,
+                _get_stage_llm("codegen", llm, stage_llms),
+            )
 
         with StageTimer("test_fix", context.job_id):
             async with session_factory() as session:
                 job = await _load_job(session, context.job_id)
                 await _set_stage(session, job, "test_fix")
-            test_result = await run_test_fix(generated, llm_client, settings.max_fix_attempts)
+            test_result = await run_test_fix(
+                generated,
+                _get_stage_llm("test_fix", llm, stage_llms),
+                settings.max_fix_attempts,
+            )
 
         with StageTimer("publish", context.job_id):
             async with session_factory() as session:

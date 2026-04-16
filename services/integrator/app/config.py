@@ -8,7 +8,16 @@ _ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://fusekit:fusekit@localhost:5432/fusekit"
     openai_api_key: str = ""
-    openai_model: str = "gpt-4o"
+    openai_model: str = "gpt-5.4"
+    openai_reasoning_effort: str = "medium"
+    discovery_model: str = "gpt-5.4-mini"
+    discovery_reasoning_effort: str = "low"
+    reader_model: str = "gpt-5.4"
+    reader_reasoning_effort: str = "medium"
+    codegen_model: str = "gpt-5.4"
+    codegen_reasoning_effort: str = "high"
+    test_fix_model: str = "gpt-5.4"
+    test_fix_reasoning_effort: str = "high"
     platform_api_url: str = "http://localhost:8000"
     max_fix_attempts: int = 3
     docs_fetch_timeout_seconds: int = 30
