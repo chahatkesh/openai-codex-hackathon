@@ -9,7 +9,6 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from app.config import settings
 from app.main import app
 from app.models import Base, IntegrationJob
 
@@ -87,13 +86,3 @@ async def api_client(session_factory):
         yield client
 
     app.dependency_overrides.clear()
-
-
-@pytest.fixture()
-def settings_override():
-    snapshot = settings.model_dump()
-    try:
-        yield settings
-    finally:
-        for key, value in snapshot.items():
-            setattr(settings, key, value)
