@@ -18,6 +18,7 @@ PROVIDER_REQUIREMENTS: dict[str, list[dict[str, str]]] = {
     ],
     "resend": [
         {"key": "RESEND_API_KEY", "label": "Resend API Key"},
+        {"key": "RESEND_FROM_EMAIL", "label": "Resend From Email"},
     ],
 }
 
