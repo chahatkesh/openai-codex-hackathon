@@ -105,21 +105,21 @@ export default function Home() {
             <Sparkles size={12} />
             Agent tool infrastructure
           </span>
-          <h1 className="display-title mx-auto mt-6 max-w-4xl text-[color:var(--text)]">Turn Codex into a billed API operator.</h1>
+          <h1 className="display-title mx-auto mt-6 max-w-4xl text-[color:var(--text)]">Agentic API Marketplace.</h1>
           <p className="body-serif mx-auto mt-5 max-w-2xl">
-            FuseKit gives Codex a live tool marketplace, wallet enforcement before execution, and an integration path when a
+            FuseKit gives Codex a live tool marketplace, wallet checks before execution, and a request path when a
             capability is missing.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/catalog" className="button-warm button-accent">
+            <Link href="/catalog" className="button-warm button-accent w-full sm:w-auto">
               Browse catalog
               <ArrowRight size={16} />
             </Link>
-            <Link href="/connect" className="button-warm">
-              Connect Codex
-            </Link>
-            <Link href="/integrate" className="button-warm">
+            <Link href="/integrate" className="button-warm w-full sm:w-auto">
               Request tool
+            </Link>
+            <Link href="/connect" className="button-warm w-full sm:w-auto">
+              Connect Codex
             </Link>
           </div>
         </motion.div>

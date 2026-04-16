@@ -27,7 +27,7 @@ export function DocsUrlForm({ onSubmit, disabled }: Props) {
       <div>
         <label htmlFor="docsUrl" className="mb-2 flex items-center gap-2 text-sm text-[color:var(--text)]">
           <LinkIcon size={15} className="text-[color:var(--accent)]" />
-          API documentation URL
+          Docs URL
         </label>
         <input
           id="docsUrl"
@@ -38,6 +38,9 @@ export function DocsUrlForm({ onSubmit, disabled }: Props) {
           placeholder="https://developer.example.com/docs"
           className="input-warm"
         />
+        <p className="mt-2 text-xs leading-relaxed text-[color:var(--text-muted)]">
+          Public documentation works best. Credentials can be added separately after a tool is published.
+        </p>
       </div>
 
       <div>
@@ -63,7 +66,7 @@ export function DocsUrlForm({ onSubmit, disabled }: Props) {
         className={`button-warm button-accent w-full ${disabled ? "cursor-not-allowed opacity-55" : ""}`}
       >
         <PlugZap size={17} />
-        {disabled ? "Queueing integration..." : "Trigger auto-integration"}
+        {disabled ? "Queueing request..." : "Request tool"}
       </motion.button>
     </motion.form>
   );

@@ -15,8 +15,8 @@ async function checkRoute(route) {
 async function checkFallbackHint() {
   const response = await fetch(`${baseUrl}/integrate`);
   const html = await response.text();
-  if (!html.includes("Resilient mode")) {
-    throw new Error("Expected resilient fallback hint on /integrate");
+  if (!html.includes("If integration endpoints are unavailable")) {
+    throw new Error("Expected fallback hint on /integrate");
   }
 }
 
@@ -34,7 +34,7 @@ async function main() {
 
   try {
     await checkFallbackHint();
-    console.log("PASS fallback: /integrate includes resilient fallback hint");
+    console.log("PASS fallback: /integrate includes fallback hint");
   } catch (error) {
     failures.push(`FAIL fallback: ${error.message}`);
   }

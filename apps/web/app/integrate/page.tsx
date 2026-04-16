@@ -66,11 +66,16 @@ export default function IntegratePage() {
   return (
     <section className="space-y-6 pb-12">
       <header className="surface-card-light p-6">
-        <p className="eyebrow">Missing-tool path</p>
-        <h1 className="section-title mt-3 text-[color:var(--text)]">Integrate new API</h1>
+        <p className="eyebrow">Request a tool</p>
+        <h1 className="section-title mt-3 text-[color:var(--text)]">Request a tool</h1>
         <p className="body-serif mt-2 max-w-2xl">
-          Paste a docs URL, queue the bounded pipeline, and keep the resulting job visible in the live feed.
+          Paste API docs, suggest a tool name, and queue the bounded pipeline that moves a missing capability into the catalog.
         </p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <span className="pill">Docs only</span>
+          <span className="pill">No credential collection</span>
+          <span className="pill">Visible in live feed</span>
+        </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -95,7 +100,7 @@ export default function IntegratePage() {
       </div>
 
       <p className="text-xs text-[color:var(--text-muted)]">
-        Resilient mode: if integration endpoints are unavailable, this screen keeps rendering and surfaces a non-blocking fallback state.
+        If integration endpoints are unavailable, this screen keeps rendering and surfaces a non-blocking fallback state.
       </p>
 
       {error ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{error}</p> : null}
@@ -116,6 +121,13 @@ export default function IntegratePage() {
               Tool published.{" "}
               <Link href="/catalog" className="warm-link underline">
                 View in catalog.
+              </Link>
+            </p>
+          ) : jobStatus.status !== "failed" ? (
+            <p className="mt-4 text-sm text-[color:var(--text-muted)]">
+              This job is now tracked in the{" "}
+              <Link href="/feed" className="warm-link underline">
+                live feed.
               </Link>
             </p>
           ) : null}

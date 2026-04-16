@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FuseKit Marketplace",
-  description: "The API execution layer for the agentic era.",
+  description: "Agentic API marketplace for tool discovery, execution, and requests.",
 };
 
 export default function RootLayout({

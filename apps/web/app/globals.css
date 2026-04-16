@@ -64,6 +64,7 @@ textarea {
   color: var(--text);
 }
 
+@layer components {
 .app-bg {
   min-height: 100%;
   background:
@@ -255,6 +256,16 @@ textarea {
   color: rgba(38, 37, 30, 0.36);
 }
 
+.input-warm option {
+  background: var(--surface-light);
+  color: var(--text);
+}
+
+.input-warm:-webkit-autofill {
+  box-shadow: 0 0 0 1000px var(--surface-light) inset;
+  -webkit-text-fill-color: var(--text);
+}
+
 .input-warm:focus {
   border-color: var(--border-medium);
   background: var(--surface-light);
@@ -287,6 +298,7 @@ textarea {
 .table-rule {
   border-color: rgba(38, 37, 30, 0.1);
   border-color: var(--border);
+}
 }
 
 @media (max-width: 700px) {
