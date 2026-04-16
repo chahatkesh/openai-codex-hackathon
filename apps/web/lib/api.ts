@@ -57,6 +57,11 @@ export type IntegrationJobStatus = {
   current_stage?: string | null;
   error_log?: string | null;
   resulting_tool_id?: string | null;
+  requested_tool_name?: string | null;
+  docs_url?: string | null;
+  triggered_by?: string | null;
+  created_at?: string | null;
+  completed_at?: string | null;
 };
 
 export type ProviderCredentialStatus = {

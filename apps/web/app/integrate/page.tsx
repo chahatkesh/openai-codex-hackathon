@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowRight, BookOpenText, Code2, PackageCheck, Search } from "lucide-react";
 import { DocsUrlForm } from "@/components/DocsUrlForm";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EndpointUnavailableError, getJobStatus, triggerIntegration, type IntegrationJobStatus } from "@/lib/api";
 import { addTrackedJobId } from "@/lib/jobs";
 
 const pipeline = [
-  { name: "Discovery", note: "Locate auth, endpoints, and operation shape", tone: "bg-[color:var(--thinking)]" },
-  { name: "Reader", note: "Extract schemas and examples from docs", tone: "bg-[color:var(--read)]" },
-  { name: "Codegen", note: "Create deterministic adapter and tests", tone: "bg-[color:var(--edit)]" },
-  { name: "Test/Fix", note: "Load generated code, run execute(), and repair failures", tone: "bg-[color:var(--gold)]" },
-  { name: "Publish", note: "Register the tool, manifest, and runtime artifacts", tone: "bg-[color:var(--grep)]" },
+  { name: "Discovery", note: "Locate auth, endpoints, and operation shape", tone: "bg-[color:var(--thinking)]", icon: Search },
+  { name: "Reader", note: "Extract schemas and examples from docs", tone: "bg-[color:var(--read)]", icon: BookOpenText },
+  { name: "Codegen", note: "Build a deterministic adapter", tone: "bg-[color:var(--edit)]", icon: Code2 },
+  { name: "Publish", note: "Register the tool for tools/list", tone: "bg-[color:var(--grep)]", icon: PackageCheck },
 ];
 
 export default function IntegratePage() {
@@ -66,70 +66,91 @@ export default function IntegratePage() {
 
   return (
     <section className="space-y-6 pb-12">
-      <header className="surface-card-light p-6">
-        <p className="eyebrow">Request a tool</p>
-        <h1 className="section-title mt-3 text-[color:var(--text)]">Request a tool</h1>
-        <p className="body-serif mt-2 max-w-2xl">
-          Paste API docs, suggest a tool name, and queue the bounded pipeline that moves a missing capability into the catalog.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <span className="pill">Docs only</span>
-          <span className="pill">No credential collection</span>
-          <span className="pill">Visible in live feed</span>
+      <header className="surface-card-light p-6 sm:p-8">
+        <p className="eyebrow">Integration pipeline</p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="section-title text-[color:var(--text)]">Request a tool</h1>
+            <p className="body-serif mt-2 max-w-2xl">
+              Paste API docs, suggest a tool name, and queue the bounded pipeline that moves a missing capability into the catalog.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="pill">Docs only</span>
+            <span className="pill">No credential collection</span>
+            <span className="pill">Visible in live feed</span>
+          </div>
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      {error ? (
+        <p className="surface-card-light px-4 py-3 text-sm text-[color:var(--gold)]">{error}</p>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
         <DocsUrlForm onSubmit={onSubmit} disabled={submitting} />
 
-        <aside className="surface-card p-5">
+        <aside className="surface-card-light p-5">
           <p className="eyebrow">Pipeline stages</p>
-          <div className="mt-5 space-y-4">
-            {pipeline.map((step, index) => (
-              <div key={step.name} className="flex gap-3">
-                <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${step.tone} mono-text text-xs text-[color:var(--text)]`}>
-                  {index + 1}
-                </span>
-                <div className="border-b table-rule pb-4 last:border-b-0 last:pb-0">
-                  <p className="text-sm text-[color:var(--text)]">{step.name}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-[color:var(--text-muted)]">{step.note}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ol className="mt-4 space-y-0" aria-label="Integration pipeline stages">
+            {pipeline.map((step, index) => {
+              const Icon = step.icon;
+              const isLast = index === pipeline.length - 1;
+              return (
+                <li key={step.name} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${step.tone}`} aria-hidden="true">
+                      <Icon size={13} />
+                    </span>
+                    {!isLast && <span className="my-1 w-px flex-1 bg-[color:var(--surface-strong)]" aria-hidden="true" />}
+                  </div>
+                  <div className={`min-w-0 pb-4 ${isLast ? "" : ""}`}>
+                    <p className="text-sm text-[color:var(--text)]">{step.name}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--text-muted)]">{step.note}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-1 text-xs leading-relaxed text-[color:var(--text-soft)]">
+            No credentials are collected. After publish the tool appears in the catalog and tools/list.
+          </p>
         </aside>
       </div>
 
-      <p className="text-xs text-[color:var(--text-muted)]">
-        If integration endpoints are unavailable, this screen keeps rendering and surfaces a non-blocking fallback state.
-      </p>
-
-      {error ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{error}</p> : null}
-
       {jobId && jobStatus ? (
         <article className="surface-card-light p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
               <p className="eyebrow">Tracked job</p>
-              <h2 className="title-small mt-1 break-all text-[color:var(--text)]">{jobId}</h2>
+              <p className="mono-text mt-1.5 break-all text-xs text-[color:var(--text)]">{jobId}</p>
             </div>
             <StatusBadge status={jobStatus.status} />
           </div>
-          <p className="mt-3 text-sm text-[color:var(--text-muted)]">Current stage: {jobStatus.current_stage ?? "queued"}</p>
-          {jobStatus.error_log ? <p className="mono-panel mt-3 overflow-x-auto p-3 text-xs text-[color:var(--error)]">{jobStatus.error_log}</p> : null}
+
+          <div className="mt-3 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
+            <span className="mono-text text-[0.65rem] text-[color:var(--text-soft)]">stage</span>
+            <span className="mono-text text-[color:var(--accent)]">{jobStatus.current_stage ?? "queued"}</span>
+          </div>
+
+          {jobStatus.error_log ? (
+            <div className="mono-panel mt-3 overflow-x-auto p-3 text-xs text-[color:var(--error)]">{jobStatus.error_log}</div>
+          ) : null}
+
           {jobStatus.status === "complete" ? (
-            <p className="mt-4 text-sm text-[color:var(--success)]">
-              Tool published.{" "}
-              <Link href="/catalog" className="warm-link underline">
-                View in catalog.
+            <p className="mt-4 flex items-center gap-1.5 text-sm text-[color:var(--success)]">
+              Tool published.
+              <Link href="/catalog" className="inline-flex items-center gap-1 underline hover:opacity-75">
+                View in catalog <ArrowRight size={12} />
               </Link>
             </p>
           ) : jobStatus.status !== "failed" ? (
             <p className="mt-4 text-sm text-[color:var(--text-muted)]">
-              This job is now tracked in the{" "}
-              <Link href="/feed" className="warm-link underline">
-                live feed.
+              Tracking in the{" "}
+              <Link href="/feed" className="underline hover:text-[color:var(--text)]">
+                live feed
               </Link>
+              .
             </p>
           ) : null}
         </article>
