@@ -1,16 +1,14 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { WalletBalance, WalletTransaction, WalletUsage } from "@/lib/api";
-import { getTransactions, getUsage, getWalletBalance, topUpWallet } from "@/lib/api";
+import { getTransactions, getUsage, getWalletBalance } from "@/lib/api";
 import { WalletCard } from "@/components/WalletCard";
 
 export default function WalletPage() {
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [usage, setUsage] = useState<WalletUsage | null>(null);
-  const [amount, setAmount] = useState("500");
-  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,48 +38,16 @@ export default function WalletPage() {
     return Object.entries(usage.by_tool).sort((a, b) => b[1].calls - a[1].calls);
   }, [usage]);
 
-  async function handleTopup(event: FormEvent) {
-    event.preventDefault();
-    const credits = Number(amount);
-    if (!Number.isFinite(credits) || credits <= 0) {
-      setError("Please enter a positive top-up amount.");
-      return;
-    }
-
-    try {
-      setPending(true);
-      const next = await topUpWallet(credits);
-      setBalance(next);
-      setError(null);
-    } catch {
-      setError("Top-up failed. Please retry.");
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <section className="space-y-6 pb-12">
       <header className="surface-card-light p-6">
         <p className="eyebrow">Credits and enforcement</p>
         <h1 className="section-title mt-3 text-[color:var(--text)]">Wallet</h1>
-        <p className="body-serif mt-2 max-w-2xl">Track balance, top up quickly, and inspect usage before demo calls drain credits.</p>
+        <p className="body-serif mt-2 max-w-2xl">Track balance and inspect usage before demo calls drain credits.</p>
       </header>
 
       {balance ? <WalletCard balance={balance} /> : null}
       {error ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{error}</p> : null}
-
-      <form onSubmit={handleTopup} className="surface-card-light p-5">
-        <label className="block text-sm text-[color:var(--text-muted)]">
-          Add credits
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" className="input-warm w-44" />
-            <button disabled={pending} className={`button-warm button-accent ${pending ? "cursor-not-allowed opacity-55" : ""}`}>
-              {pending ? "Processing..." : "Add credits"}
-            </button>
-          </div>
-        </label>
-      </form>
 
       <section className="surface-card-light p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

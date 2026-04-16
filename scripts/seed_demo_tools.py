@@ -181,6 +181,26 @@ SEED_TOOLS = [
         },
     },
     {
+        "name": "get_fusekit_guide",
+        "description": "Return a short FuseKit onboarding guide. Use this first if you need to understand how FuseKit expects build-time MCP calls and runtime HTTP execution to work.",
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.get_fusekit_guide",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "guide": {"type": "string"},
+            },
+        },
+    },
+    {
         "name": "request_integration",
         "description": "Request FuseKit to add a missing API or capability to the catalog. Use this when the tool you need is not already exposed in tools/list, before giving up on the task.",
         "provider": "fusekit",

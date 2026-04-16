@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LiveFeed } from "@/components/LiveFeed";
 import {
+  ApiError,
   EndpointUnavailableError,
   getJobStatus,
   getRecentJobs,
@@ -11,7 +12,7 @@ import {
   type CatalogItem,
   type IntegrationJobStatus,
 } from "@/lib/api";
-import { addTrackedJobId, getTrackedJobIds } from "@/lib/jobs";
+import { addTrackedJobId, getTrackedJobIds, removeTrackedJobId } from "@/lib/jobs";
 
 type JobFeed = { jobId: string; status: IntegrationJobStatus };
 
@@ -32,6 +33,8 @@ export default function FeedPage() {
       loading = true;
       setIsRefreshing(true);
 
+      let serverJobFeeds: JobFeed[] = [];
+
       try {
         try {
           const tools = await getRecentTools();
@@ -49,56 +52,74 @@ export default function FeedPage() {
           }
         }
 
-        let recentJobs: JobFeed[] = [];
         try {
           const serverJobs = await getRecentJobs(20);
-          recentJobs = serverJobs.flatMap((j) => {
+          serverJobs.forEach((j) => {
             const id = j.job_id ?? j.id;
-            if (!id) return [];
-            addTrackedJobId(id);
-            return [{ jobId: id, status: j }];
+            if (id) addTrackedJobId(id);
           });
-          if (!cancelled) setJobsError(null);
+          serverJobFeeds = serverJobs
+            .map((status) => {
+              const jobId = status.job_id ?? status.id;
+              return jobId ? { jobId, status } : null;
+            })
+            .filter((item): item is JobFeed => item !== null);
+          if (!cancelled) {
+            setJobs(serverJobFeeds);
+            setJobsError(null);
+          }
         } catch {
           // Non-fatal: local tracked IDs still render when available.
         }
 
         const jobIds = getTrackedJobIds();
-        if (!jobIds.length && !recentJobs.length) {
+        if (!jobIds.length) {
           if (!cancelled) {
-            setJobs([]);
-            setLastUpdated(new Date());
-          }
-          return;
-        }
-
-        const recentById = new Map(recentJobs.map((job) => [job.jobId, job]));
-        const trackedOnlyIds = jobIds.filter((jobId) => !recentById.has(jobId));
-
-        if (!trackedOnlyIds.length) {
-          if (!cancelled) {
-            setJobs(recentJobs);
+            setJobs(serverJobFeeds);
             setLastUpdated(new Date());
           }
           return;
         }
 
         try {
-          const trackedStatuses = await Promise.all(
-            trackedOnlyIds.map(async (jobId) => ({
+          const settled = await Promise.allSettled(
+            jobIds.map(async (jobId) => ({
               jobId,
               status: await getJobStatus(jobId),
             })),
           );
+
+          const successful = settled.flatMap((result) =>
+            result.status === "fulfilled" ? [result.value] : [],
+          );
+
+          const staleJobIds = settled.flatMap((result, index) => {
+            if (result.status !== "rejected") return [];
+            const reason = result.reason;
+            if (reason instanceof ApiError && reason.status === 404) {
+              return [jobIds[index]];
+            }
+            return [];
+          });
+          staleJobIds.forEach((jobId) => removeTrackedJobId(jobId));
+
+          const deduped = new Map<string, JobFeed>();
+          for (const item of serverJobFeeds) deduped.set(item.jobId, item);
+          for (const item of successful) deduped.set(item.jobId, item);
+
           if (!cancelled) {
-            setJobs([...recentJobs, ...trackedStatuses].slice(0, 20));
+            setJobs(Array.from(deduped.values()).slice(0, 20));
             setJobsError(null);
             setLastUpdated(new Date());
           }
-        } catch {
+        } catch (error) {
           if (!cancelled) {
-            setJobs(recentJobs);
-            setJobsError("Integration status endpoint unavailable. Tracked job cards will resume automatically.");
+            setJobs(serverJobFeeds);
+            if (error instanceof EndpointUnavailableError) {
+              setJobsError("Integration status endpoint unavailable. Tracked job cards will resume automatically.");
+            } else {
+              setJobsError("Could not refresh some tracked jobs. Stale jobs will be cleaned up automatically.");
+            }
             setLastUpdated(new Date());
           }
         }
@@ -132,7 +153,10 @@ export default function FeedPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="pill bg-[rgba(31,138,101,0.1)] text-[color:var(--success)]">
-              <span className={`h-1.5 w-1.5 rounded-full bg-current ${isRefreshing ? "animate-ping" : ""}`} aria-hidden="true" />
+              <span
+                className={`h-1.5 w-1.5 rounded-full bg-current ${isRefreshing ? "animate-ping" : ""}`}
+                aria-hidden="true"
+              />
               Polling every 3s
             </span>
             <span className="pill">{jobs.length} jobs</span>
@@ -142,7 +166,9 @@ export default function FeedPage() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t table-rule pt-4">
           <p className="text-sm text-[color:var(--text-muted)]">
-            {lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Preparing live status..."}
+            {lastUpdated
+              ? `Last updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+              : "Preparing live status..."}
           </p>
           <Link href="/integrate" className="button-warm">
             Request a tool

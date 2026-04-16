@@ -1,348 +1,221 @@
 <img width="3000" height="1000" alt="Git Repo Cover" src="https://github.com/user-attachments/assets/8ddae07c-14ee-4664-9711-5e06effcc5ef" />
 
+# FuseKit
 
-# FuseKit 🔥
-
-> **Describe what you want built. FuseKit figures out every API it needs — and integrates the ones it doesn't have yet, live, before your eyes.**
+> Agentic API marketplace for Codex: one MCP URL for discovering, calling, billing, and growing tools.
 
 [![Built for OpenAI Codex Hackathon](https://img.shields.io/badge/OpenAI%20Codex-Hackathon%202026-412991)](https://openai.com)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-platform-009688)](https://fastapi.tiangolo.com)
+[![MCP](https://img.shields.io/badge/MCP-enabled-111827)](https://modelcontextprotocol.io)
 [![Turborepo](https://img.shields.io/badge/Turborepo-monorepo-EF4444)](https://turbo.build)
 
----
+## Why It Exists
 
-## What is FuseKit?
+Codex can plan and build software quickly, but real apps still slow down when they need external APIs. Developers have to find docs, write wrappers, handle credentials, track usage, and make the result reusable.
 
-FuseKit is a **self-growing agentic system** that takes a single natural language prompt and autonomously figures out, integrates, and executes every API it needs to complete the task — including APIs it has never seen before.
+FuseKit turns those APIs into reusable platform capabilities. Codex talks to FuseKit over MCP at build time, while deployed apps can call the same capabilities over HTTP at runtime.
 
-Most AI coding tools assume you already know which APIs you need. FuseKit doesn't. When it hits a capability gap, it doesn't stop and ask you. It spins up five integration agents that find the right API, read the docs, generate working code, test it against live endpoints, and write the validated integration into its **living catalog** — all before your request finishes running.
+## What It Does
 
-**Every request makes FuseKit smarter. The catalog grows itself.**
+- Exposes an MCP server with `tools/list` and `tools/call`.
+- Stores tool definitions, costs, schemas, and status in Postgres.
+- Checks wallet balance and deducts credits before every billable tool call.
+- Executes built-in tools such as `scrape_url`, `send_email`, `send_sms`, `search_web`, and `get_producthunt`.
+- Returns deterministic MCP errors, including `TOOL_NOT_FOUND` and `INSUFFICIENT_FUNDS`.
+- Queues missing capabilities as integration jobs.
+- Runs a bounded integration pipeline: discovery, reader, codegen, test/fix, publish.
+- Publishes successful tools back into the catalog so the next Codex request can use them.
+- Provides a Next.js dashboard for catalog browsing, wallet state, credentials, live feed, and manual docs URL integration.
 
----
+## Demo Story
 
-## The Demo
+A developer asks Codex to build or run a workflow that needs scraping, email, SMS, or an API that is not available yet. Codex asks FuseKit what tools exist. If a tool is live, FuseKit checks the wallet, executes it, logs the result, and returns data to Codex.
 
-**User types:**
-```
-Monitor Product Hunt daily, find any AI dev tools launched this week,
-scrape their landing pages, and email me a digest every morning.
-```
-
-**What happens next — live, on screen:**
-
-| Step | What you see | What it means |
-|------|-------------|---------------|
-| Planner decomposes request | 3 capabilities identified | Scheduling, scraping, email |
-| Catalog check | Scraping ✅ Email ✅ Product Hunt ❌ | Gap detected |
-| Agent 1 activates | Searching for Product Hunt API | "It knows what it doesn't know" |
-| Agent 2 activates | Reading PH API v2 docs | No human input |
-| Agent 3 activates | Generating integration code | Live code appearing |
-| Agent 4 activates | Testing against live endpoint → error → self-corrects | "It just taught itself" |
-| Agent 5 activates | Writing to living catalog | Catalog visibly grows |
-| Pipeline resumes | All 3 integrations called via MCP | Everything wired |
-| **Final moment** | **Digest email lands in inbox** | **Real. Undeniable.** |
-
----
+If the tool is missing, FuseKit creates an integration job. The integrator reads the API docs, generates a Python adapter, tests and repairs it, publishes a tool definition and runtime manifest, then makes the new tool visible through `tools/list`, `/api/catalog`, and `/api/execute/{tool_name}`.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    User Prompt (NL)                      │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Planner Agent                         │
-│         Decomposes request → required capabilities       │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│                 Living Catalog Check                     │
-│              Reads SKILL.md — gap detected?              │
-└────────────┬──────────────────────────────┬─────────────┘
-             │ YES — use existing            │ NO — trigger integration
-             ▼                              ▼
-┌────────────────────┐     ┌───────────────────────────────┐
-│   Call via MCP     │     │      Integration Agents        │
-│   immediately      │     │                               │
-└────────────────────┘     │  Agent 1 → Find right API     │
-                           │  Agent 2 → Read docs          │
-                           │  Agent 3 → Generate code      │
-                           │  Agent 4 → Test + self-correct│
-                           │  Agent 5 → Write to SKILL.md  │
-                           └──────────────┬────────────────┘
-                                          │ catalog updated
-                                          ▼
-                           ┌─────────────────────────────┐
-                           │     MCP Execution Layer      │
-                           │  Single gateway — all skills │
-                           └──────┬──────────┬────────────┘
-                                  │          │
-                    ┌─────────────┘          └──────────────┐
-                    ▼                                        ▼
-          ┌──────────────────┐                   ┌─────────────────────┐
-          │  Scraper (Apify) │                   │  Email (Resend)     │
-          │  PH Monitor      │                   │  Twilio SMS         │
-          └──────────────────┘                   └─────────────────────┘
-                    │                                        │
-                    └──────────────┬─────────────────────────┘
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │  Real output — digest email   │
-                    │  lands in inbox, live         │
-                    └──────────────────────────────┘
+```mermaid
+flowchart TD
+    A[Codex or MCP client] -->|tools/list and tools/call| B[Platform service]
+    B --> C[Postgres catalog]
+    B --> D[Wallet middleware]
+    D --> E[Tool executor]
+    E --> F[Provider APIs]
+
+    B -->|TOOL_NOT_FOUND| G[Integration job]
+    G --> H[Integrator service]
+    H --> I[Discovery]
+    I --> J[Reader]
+    J --> K[Codegen]
+    K --> L[Test and fix]
+    L --> M[Publish tool and manifest]
+    M --> C
+    M --> E
+
+    N[Next.js dashboard] -->|REST polling| B
 ```
 
----
+## Demo Critical Path
 
-## How SKILL.md Works
+1. Codex connects to `http://localhost:8000/mcp/http`.
+2. `tools/list` returns live catalog tools.
+3. Codex executes `scrape_url`, `send_email`, and `send_sms`.
+4. Wallet checks run before every `tools/call`.
+5. A missing tool returns `TOOL_NOT_FOUND` and queues an integration job.
+6. The integrator moves through discovery, reader, codegen, test/fix, and publish.
+7. The new tool appears in the catalog and becomes callable.
+8. Final output is delivered as email, SMS, or fetched data.
 
-SKILL.md is FuseKit's **living catalog** — a plain text file that acts as shared memory across all agents. Think of it as a recipe book that writes itself.
+## Why This Fits Codex
 
-Every time FuseKit integrates a new API, Agent 5 appends a validated entry:
+FuseKit uses Codex where it is strongest: reading unfamiliar technical docs, writing integration code, fixing errors, and turning a one-off request into reusable infrastructure. The result is not another planner. It is a tool platform that gives Codex a stable MCP surface, a wallet-aware execution layer, and a path for handling capability gaps without leaving the workflow.
 
-```markdown
-## Product Hunt API
-- **Purpose**: Fetch newly launched products by category and date
-- **Auth**: Bearer token — Authorization: Bearer <token>
-- **Endpoint**: POST https://api.producthunt.com/v2/api/graphql
-- **Working snippet**:
-  ```typescript
-  const res = await fetch('https://api.producthunt.com/v2/api/graphql', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.PH_TOKEN}` },
-    body: JSON.stringify({ query: `{ posts(order: NEWEST) { edges { node { name tagline url } } } }` })
-  })
-  ```
-- **Rate limit**: 500 requests/day
-- **Notes**: Pagination via cursor. Filter by topic slug for categories.
-- **Added**: 2026-04-11 | **Tested**: ✅ | **Agent**: auto-integrated
+## Monorepo Layout
+
+```text
+.
+|-- apps/web                 # Next.js marketplace UI
+|-- services/platform        # FastAPI MCP server, REST APIs, wallet, execution
+|-- services/integrator      # Python integration pipeline
+|-- packages/contracts       # Shared JSON contracts
+|-- infra                    # Docker, Alembic, service images
+|-- scripts                  # Smoke tests, seed helpers, contract checks
+`-- docs                     # Architecture notes and demo flow
 ```
 
-Next time any request needs Product Hunt data — it's there. No re-integration needed.
+## Key Services
 
----
+| Area | Location | Responsibility |
+| --- | --- | --- |
+| Frontend | `apps/web` | Catalog, wallet, credentials, live feed, integration form |
+| Platform | `services/platform` | MCP transports, REST APIs, tool registry, wallet, execution logs |
+| Integrator | `services/integrator` | Docs discovery, spec reading, codegen, test/fix, publish |
+| Contracts | `packages/contracts` | JSON schemas shared by TypeScript and Python |
+| Infra | `infra` | Postgres, MinIO, Docker images, Alembic migrations |
 
-## Real World Examples
+## Important Endpoints
 
-### Example 1 — Morning digest (the demo)
-```
-"Monitor Product Hunt daily, find AI dev tools launched this week,
-scrape their landing pages, and email me a digest every morning."
-```
-**APIs integrated:** Product Hunt API v2, Apify web scraper, Resend email
-**Output:** Daily email at 8am with titles, descriptions, and landing page summaries
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Platform health check |
+| `GET /mcp/sse` | Legacy MCP SSE transport |
+| `ANY /mcp/http` | MCP Streamable HTTP transport |
+| `GET /api/catalog` | List catalog tools |
+| `GET /api/catalog/recent` | Recently published tools |
+| `GET /api/wallet/balance` | Current wallet balance |
+| `POST /api/wallet/topup` | Add demo credits |
+| `POST /api/integrate` | Queue an integration from docs |
+| `GET /api/integrate/{job_id}` | Poll integration status |
+| `POST /api/execute/{tool_name}` | Runtime execution endpoint for deployed apps |
+| `GET /api/capabilities/{tool_name}/manifest` | Machine-readable runtime contract |
 
----
-
-### Example 2 — Competitor monitoring
-```
-"Watch my 3 competitors' pricing pages. If any price changes,
-send me a Twilio SMS immediately."
-```
-**APIs integrated:** Apify scraper (existing), Twilio SMS (new — integrated live)
-**Output:** Real-time SMS alert when pricing HTML changes
-
----
-
-### Example 3 — GitHub activity digest
-```
-"Every Friday, find trending GitHub repos in Rust from this week,
-summarize what each one does, and post a thread to my Slack."
-```
-**APIs integrated:** GitHub REST API (new), Slack webhooks (new), OpenAI summarization
-**Output:** Weekly Slack thread posted automatically every Friday
-
----
-
-### Example 4 — Lead enrichment
-```
-"Take this list of company names, find their LinkedIn pages,
-scrape the employee count and industry, and email me a CSV."
-```
-**APIs integrated:** LinkedIn scraper via Apify, Resend email (existing)
-**Output:** Enriched CSV delivered to inbox in under 2 minutes
-
----
-
-### Example 5 — Support ticket routing
-```
-"Watch our Intercom inbox. If a message contains the word 'refund',
-create a Notion task and ping the #billing Slack channel."
-```
-**APIs integrated:** Intercom webhooks (new), Notion API (new), Slack (existing)
-**Output:** Zero-touch ticket routing between three platforms
-
----
-
-## Tech Stack
-
-### Frontend
-| Tool | Purpose |
-|------|---------|
-| Next.js 15 | Web app + API routes |
-| TypeScript | End to end type safety |
-| Tailwind CSS | Styling |
-| Server-Sent Events | Live agent status streaming to UI |
-
-### Agent Runtime
-| Tool | Purpose |
-|------|---------|
-| OpenAI Codex | Powers all 5 integration agents |
-| LangChain / custom | Agent orchestration |
-| Node.js | Agent execution runtime |
-
-### Integrations (pre-loaded in catalog)
-| Service | Purpose | Skill in catalog |
-|---------|---------|-----------------|
-| Apify | Web scraping | ✅ pre-loaded |
-| Resend | Transactional email | ✅ pre-loaded |
-| Twilio | SMS alerts | ✅ pre-loaded |
-| Product Hunt API | Launch monitoring | ⚡ integrated live in demo |
-| Slack Webhooks | Team notifications | ⚡ integrated on demand |
-| GitHub REST API | Repo data | ⚡ integrated on demand |
-
-### Infrastructure
-| Tool | Purpose |
-|------|---------|
-| Turborepo | Monorepo management |
-| MCP (Model Context Protocol) | Single gateway for all integrations |
-| SKILL.md | Living catalog — zero database needed |
-
----
-
-## Repo Structure
-
-```
-fusekit/
-├── apps/
-│   ├── web/                        # Next.js frontend
-│   │   ├── app/
-│   │   │   ├── page.tsx            # Prompt input UI
-│   │   │   ├── demo/page.tsx       # Live agent panel
-│   │   │   └── api/
-│   │   │       ├── run/route.ts    # Triggers planner agent
-│   │   │       └── catalog/route.ts # Streams SKILL.md updates
-│   │   └── components/
-│   │       ├── PromptInput.tsx     # User types request
-│   │       ├── AgentPanel.tsx      # 5 agents working live
-│   │       ├── CatalogViewer.tsx   # SKILL.md growing on screen
-│   │       └── OutputPanel.tsx     # Final result display
-│   │
-│   └── agents/                     # Agent runtime
-│       ├── planner.ts              # Decomposes prompt → capabilities
-│       ├── gap-detector.ts         # Checks SKILL.md for missing skills
-│       ├── executor.ts             # Calls MCP with resolved skills
-│       └── integration/
-│           ├── api-finder.ts       # Agent 1 — finds right API
-│           ├── doc-reader.ts       # Agent 2 — reads docs autonomously
-│           ├── code-generator.ts   # Agent 3 — generates integration code
-│           ├── tester.ts           # Agent 4 — tests + self-corrects
-│           └── skill-writer.ts     # Agent 5 — writes to SKILL.md
-│
-├── packages/
-│   ├── catalog/                    # SKILL.md read/write
-│   │   ├── reader.ts               # Parse SKILL.md → structured data
-│   │   ├── writer.ts               # Append new skill entries
-│   │   └── SKILL.md                # The living catalog
-│   │
-│   ├── mcp/                        # MCP gateway
-│   │   ├── client.ts               # Single MCP client
-│   │   └── tools/
-│   │       ├── apify.ts            # Scraping (pre-loaded)
-│   │       ├── resend.ts           # Email (pre-loaded)
-│   │       ├── twilio.ts           # SMS (pre-loaded)
-│   │       └── [dynamic].ts        # Generated at runtime by Agent 5
-│   │
-│   └── utils/
-│       ├── cache.ts                # API response cache (demo safety)
-│       ├── mutex.ts                # SKILL.md write lock
-│       └── retry.ts                # Agent retry with backoff
-│
-├── SKILL.md                        # Root living catalog
-├── turbo.json
-├── package.json
-└── tsconfig.json
-```
-
----
-
-## Getting Started
+## Local Setup
 
 ### Prerequisites
+
+- Python 3.11+
 - Node.js 20+
-- pnpm 8+
-- OpenAI API key (Codex access)
+- pnpm
+- Docker and Docker Compose
 
-### Installation
-
-```bash
-git clone https://github.com/yourteam/fusekit
-cd fusekit
-pnpm install
-```
-
-### Environment Variables
+### Install
 
 ```bash
-# .env.local
-OPENAI_API_KEY=sk-...
-APIFY_API_TOKEN=apify_...
-RESEND_API_KEY=re_...
-TWILIO_ACCOUNT_SID=AC...
-TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=+1...
-PH_TOKEN=                    # Product Hunt — integrated live in demo
+pnpm setup
 ```
 
-### Run locally
+### Environment
+
+Create a root `.env` file with the keys needed for the demo path you want to run.
+
+```bash
+OPENAI_API_KEY=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM_NUMBER=
+SERPER_API_KEY=
+PRODUCTHUNT_API_TOKEN=
+```
+
+FuseKit does not auto-acquire third-party credentials. Provider keys are loaded by the platform, not by Codex.
+
+### Run
 
 ```bash
 pnpm dev
 ```
 
-Opens at `http://localhost:3000`
+This starts:
 
----
+- Postgres on `localhost:5432`
+- Platform API and MCP server on `localhost:8000`
+- Integrator service on `localhost:8001`
+- Web dashboard on `localhost:3000`
 
-## Error Handling Strategy
+Seed demo data if needed:
 
-FuseKit uses **demo-safe** error handling — not production-grade, but stage-proof.
+```bash
+pnpm db:seed
+```
 
-| Error | Treatment | Why |
-|-------|-----------|-----|
-| API rate limit | Silent cache fallback | Never kills demo |
-| Agent code gen fails | Visible retry on screen | This IS the wow moment |
-| SKILL.md write conflict | Mutex lock + friendly message | Prevents silent corruption |
-| Email delay | Pre-open inbox on phone | Venue wifi is unpredictable |
-| LLM timeout | 3x retry with backoff | Codex can be slow under load |
+The demo MCP token is:
 
-The only error judges should *see* is Agent 4 self-correcting. Everything else recovers silently.
+```text
+demo-token-fusekit-2026
+```
 
----
+## Connect Codex
 
-## The Two Wow Moments
+Use the Streamable HTTP MCP endpoint:
 
-### Moment 1 — "It knows what it doesn't know"
-The planner detects a capability gap mid-task. The living catalog is missing Product Hunt. Five agents spin up on screen. This is the moment that separates FuseKit from every other agent demo.
+```text
+http://localhost:8000/mcp/http
+```
 
-### Moment 2 — "It just taught itself a new skill"
-Agent 5 writes a new entry to the living catalog. On screen, judges watch the catalog gain a new block in real time. The system is now permanently smarter than it was 90 seconds ago.
+For CLI setup:
 
-### The closer — email arrives live
-A real digest email lands in a real inbox during the presentation. Non-technical, visceral, undeniable proof that the whole pipeline worked end to end.
+```bash
+export FUSEKIT_MCP_TOKEN="demo-token-fusekit-2026"
 
----
+codex mcp add fusekit \
+  --url "http://localhost:8000/mcp/http" \
+  --bearer-token-env-var FUSEKIT_MCP_TOKEN
 
-## Built at OpenAI Codex Hackathon — Bengaluru 2026
+codex mcp list
+```
 
-> "Describe what you want. If the API exists in our catalog, it's called instantly. If it doesn't — watch our agents integrate it live, right now, and call it before your demo ends."
+The web app also includes a Connect page with setup snippets for VS Code, the Codex app, and CLI.
 
----
+## Verification
+
+Run these after the stack is up:
+
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/api/catalog
+python scripts/validate_contracts.py
+python scripts/smoke_demo.py
+pnpm build
+```
+
+`scripts/smoke_demo.py` checks the core demo flow: MCP discovery, tool execution, wallet deduction, missing-tool integration, catalog growth, and execution of the newly published tool.
+
+## Design Principles
+
+- Keep Codex as the planner; FuseKit is the tool platform.
+- Keep business logic out of the frontend.
+- Keep MCP error responses deterministic.
+- Use simple polling for the demo surface.
+- Use bounded retries for generated integrations.
+- Require explicit provider credentials before live third-party execution.
+
+## Built For The OpenAI Codex Hackathon
+
+FuseKit demonstrates Codex as an engineering collaborator inside a real platform loop. It does not only generate code once. It helps discover an API, produce an adapter, test it, publish it, and make it immediately reusable through MCP and HTTP contracts.
 
 ## License
 

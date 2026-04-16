@@ -144,6 +144,96 @@ SEED_TOOLS: list[dict] = [
             },
         },
     },
+    {
+        "name": "get_fusekit_guide",
+        "description": (
+            "Return a short FuseKit onboarding guide. Use this first if you need"
+            " to understand how FuseKit expects build-time MCP calls and runtime"
+            " HTTP execution to work."
+        ),
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.get_fusekit_guide",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {"guide": {"type": "string"}},
+        },
+    },
+    {
+        "name": "get_capability_manifest",
+        "description": (
+            "Return the FuseKit runtime manifest for an existing capability. Use"
+            " this when Codex is building a deployed app and needs the HTTP"
+            " endpoint contract for a FuseKit capability."
+        ),
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.get_capability_manifest",
+        "input_schema": {
+            "type": "object",
+            "required": ["capability_name"],
+            "properties": {
+                "capability_name": {
+                    "type": "string",
+                    "description": "Existing FuseKit capability/tool name, e.g. get_producthunt.",
+                }
+            },
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {"manifest": {"type": "object"}},
+        },
+    },
+    {
+        "name": "request_integration",
+        "description": (
+            "Request FuseKit to add a missing API or capability to the catalog."
+            " Use this when the tool you need is not already exposed in"
+            " tools/list, before giving up on the task."
+        ),
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.request_integration",
+        "input_schema": {
+            "type": "object",
+            "required": ["capability_description"],
+            "properties": {
+                "capability_description": {
+                    "type": "string",
+                    "description": "Plain-English description of the missing capability or provider integration needed.",
+                },
+                "docs_url": {
+                    "type": "string",
+                    "description": "Optional docs URL to prioritize for integration discovery.",
+                },
+                "requested_tool_name": {
+                    "type": "string",
+                    "description": "Optional preferred snake_case tool name, e.g. send_slack_message.",
+                },
+            },
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "message": {"type": "string"},
+                "job_id": {"type": "string"},
+                "docs_url": {"type": "string"},
+            },
+        },
+    },
 ]
 
 LEGACY_REMOVED_SEED_TOOLS = {"send_sms"}

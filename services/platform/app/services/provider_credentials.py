@@ -18,6 +18,7 @@ PROVIDER_REQUIREMENTS: dict[str, list[dict[str, str]]] = {
     ],
     "resend": [
         {"key": "RESEND_API_KEY", "label": "Resend API Key"},
+        {"key": "RESEND_FROM_EMAIL", "label": "Resend From Email"},
     ],
 }
 
@@ -89,9 +90,6 @@ async def list_provider_credential_statuses() -> list[dict[str, Any]]:
         tools_result = await session.execute(select(ToolDefinition))
         tools = tools_result.scalars().all()
 
-        providers = {normalize_provider(tool.provider): tool.provider for tool in tools}
-        providers.update({key: key for key in PROVIDER_REQUIREMENTS})
-
         creds_result = await session.execute(
             select(ProviderCredential).where(ProviderCredential.is_active.is_(True))
         )
@@ -99,6 +97,10 @@ async def list_provider_credential_statuses() -> list[dict[str, Any]]:
         stored_by_provider: dict[str, set[str]] = {}
         for row in stored_rows:
             stored_by_provider.setdefault(row.provider, set()).add(row.key)
+
+        providers = {normalize_provider(tool.provider): tool.provider for tool in tools}
+        for provider in stored_by_provider:
+            providers.setdefault(provider, provider)
 
         payload: list[dict[str, Any]] = []
         for normalized, display_name in sorted(providers.items()):

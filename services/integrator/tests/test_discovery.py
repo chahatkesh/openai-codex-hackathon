@@ -43,6 +43,18 @@ class MessyDiscoveryLLM:
         }
 
 
+class StructuredRateLimitLLM:
+    async def generate_json(self, _system_prompt: str, _user_prompt: str):
+        return {
+            "provider_name": "Resend",
+            "base_url": "https://api.resend.com",
+            "auth_method": "bearer",
+            "key_endpoints": ["/emails"],
+            "rate_limits": {"default": "5 requests per second", "note": "can be increased"},
+            "sandbox_available": False,
+        }
+
+
 @pytest.mark.asyncio
 async def test_discovery_normalizes_llm_shape_drift(monkeypatch):
     async def fake_fetch_docs_bundle(_url: str, max_pages: int = 2) -> str:  # noqa: ARG001
@@ -56,3 +68,16 @@ async def test_discovery_normalizes_llm_shape_drift(monkeypatch):
     assert result.auth_method == "unknown"
     assert result.key_endpoints == ["GET /pet/{petId}"]
     assert result.sandbox_available is False
+
+
+@pytest.mark.asyncio
+async def test_discovery_coerces_structured_rate_limits(monkeypatch):
+    async def fake_fetch_docs_bundle(_url: str, max_pages: int = 2) -> str:  # noqa: ARG001
+        return "Title: Resend"
+
+    monkeypatch.setattr("app.agents.discovery.fetch_docs_bundle", fake_fetch_docs_bundle)
+
+    result = await run_discovery("https://resend.com/docs/api-reference/emails", StructuredRateLimitLLM())
+
+    assert result.provider_name == "Resend"
+    assert result.rate_limits == '{"default": "5 requests per second", "note": "can be increased"}'

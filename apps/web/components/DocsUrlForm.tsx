@@ -22,7 +22,7 @@ export function DocsUrlForm({ onSubmit, disabled }: Props) {
         event.preventDefault();
         await onSubmit({ docsUrl, toolName: toolName || undefined });
       }}
-      className="surface-card-light elevated-card space-y-5 p-6"
+      className="surface-card-light space-y-5 p-6"
     >
       <div>
         <label htmlFor="docsUrl" className="mb-2 flex items-center gap-2 text-sm text-[color:var(--text)]">

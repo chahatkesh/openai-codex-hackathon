@@ -3,6 +3,9 @@ from __future__ import annotations
 import pytest
 
 from app.api.credentials import get_provider_credential_detail, list_provider_credentials, upsert_provider_credentials
+from app.services.provider_credentials import list_provider_credential_statuses
+from app.models import ToolDefinition
+from tests.helpers import DummyResult, FakeSession
 
 
 @pytest.mark.asyncio
@@ -10,12 +13,15 @@ async def test_list_provider_credentials_returns_statuses(monkeypatch):
     async def fake_list():
         return [
             {
-                "provider": "twilio",
-                "display_name": "twilio",
-                "requirements": [{"key": "TWILIO_ACCOUNT_SID", "label": "Twilio Account SID"}],
+                "provider": "resend",
+                "display_name": "resend",
+                "requirements": [
+                    {"key": "RESEND_API_KEY", "label": "Resend API Key"},
+                    {"key": "RESEND_FROM_EMAIL", "label": "Resend From Email"},
+                ],
                 "configured_keys": [],
                 "is_configured": False,
-                "affected_tools": [{"name": "send_sms", "status": "pending_credentials"}],
+                "affected_tools": [{"name": "send_resend_email", "status": "pending_credentials"}],
             }
         ]
 
@@ -23,7 +29,7 @@ async def test_list_provider_credentials_returns_statuses(monkeypatch):
 
     payload = await list_provider_credentials()
 
-    assert payload[0]["provider"] == "twilio"
+    assert payload[0]["provider"] == "resend"
 
 
 @pytest.mark.asyncio
@@ -94,3 +100,85 @@ async def test_upsert_provider_credentials_persists_and_returns_detail(monkeypat
     assert captured["provider"] == "twilio"
     assert payload["is_configured"] is True
     assert payload["affected_tools"][0]["status"] == "live"
+
+
+@pytest.mark.asyncio
+async def test_list_provider_credential_statuses_is_dynamic(monkeypatch):
+    session = FakeSession(
+        execute_results=[
+            DummyResult(
+                [
+                    ToolDefinition(
+                        name="send_slack_message_v2",
+                        description="Send Slack messages",
+                        provider="slack",
+                        cost_per_call=10,
+                        status="pending_credentials",
+                        input_schema={"type": "object"},
+                        output_schema={"type": "object"},
+                        category="communication",
+                        source="pipeline",
+                        version=1,
+                        implementation_module="send_slack_message_v2_module",
+                    )
+                ]
+            ),
+            DummyResult([]),
+        ]
+    )
+
+    class _SessionCM:
+        async def __aenter__(self):
+            return session
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr("app.services.provider_credentials.async_session", lambda: _SessionCM())
+
+    payload = await list_provider_credential_statuses()
+
+    assert [item["provider"] for item in payload] == ["slack"]
+
+
+@pytest.mark.asyncio
+async def test_list_provider_credential_statuses_tracks_resend_requirements(monkeypatch):
+    session = FakeSession(
+        execute_results=[
+            DummyResult(
+                [
+                    ToolDefinition(
+                        name="send_resend_email",
+                        description="Send emails with Resend",
+                        provider="resend",
+                        cost_per_call=10,
+                        status="pending_credentials",
+                        input_schema={"type": "object"},
+                        output_schema={"type": "object"},
+                        category="communication",
+                        source="pipeline",
+                        version=1,
+                        implementation_module="send_resend_email_module",
+                    )
+                ]
+            ),
+            DummyResult([]),
+        ]
+    )
+
+    class _SessionCM:
+        async def __aenter__(self):
+            return session
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr("app.services.provider_credentials.async_session", lambda: _SessionCM())
+
+    payload = await list_provider_credential_statuses()
+
+    assert payload[0]["provider"] == "resend"
+    assert payload[0]["requirements"] == [
+        {"key": "RESEND_API_KEY", "label": "Resend API Key"},
+        {"key": "RESEND_FROM_EMAIL", "label": "Resend From Email"},
+    ]
