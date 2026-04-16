@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntegrateRequest",
+  "type": "object",
+  "required": ["job_id", "docs_url"],
+  "properties": {
+    "job_id": { "type": "string", "format": "uuid" },
+    "docs_url": { "type": "string", "format": "uri" },
+    "requested_by": {
+      "type": "string",
+      "enum": ["user", "mcp_tool_miss", "crawler"],
+      "default": "user"
+    },
+    "requested_tool_name": { "type": "string" }
+  }
+}

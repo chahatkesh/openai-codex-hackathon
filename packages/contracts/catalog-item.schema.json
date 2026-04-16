@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CatalogItem",
+  "type": "object",
+  "required": ["id", "name", "description", "provider", "cost_per_call", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "provider": { "type": "string" },
+    "cost_per_call": { "type": "integer" },
+    "status": { "type": "string", "enum": ["live", "pending_credentials", "deprecated"] },
+    "category": { "type": "string" },
+    "input_schema": { "type": "object" },
+    "source": { "type": "string" },
+    "version": { "type": "integer" },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

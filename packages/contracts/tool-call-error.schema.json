@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ToolCallError",
+  "type": "object",
+  "required": ["error_code", "message"],
+  "properties": {
+    "error_code": {
+      "type": "string",
+      "enum": ["TOOL_NOT_FOUND", "INSUFFICIENT_FUNDS", "EXECUTION_ERROR"]
+    },
+    "message": { "type": "string" }
+  }
+}

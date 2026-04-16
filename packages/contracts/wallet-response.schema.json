@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WalletResponse",
+  "type": "object",
+  "required": ["balance"],
+  "properties": {
+    "balance": { "type": "integer" },
+    "spending_limit_per_session": { "type": "integer" },
+    "low_balance_threshold": { "type": "integer" }
+  }
+}
