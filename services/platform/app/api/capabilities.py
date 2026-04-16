@@ -12,6 +12,7 @@ from app.db import get_session
 from app.models import ToolDefinition
 from app.services.capabilities_service import get_tool_definition
 from app.services.manifest_service import build_runtime_manifest
+from app.services.provider_credentials import get_provider_requirements, normalize_provider
 
 router = APIRouter(prefix="/api/capabilities", tags=["capabilities"])
 
@@ -25,6 +26,7 @@ def _serialize_capability(tool: ToolDefinition) -> dict:
         "name": tool.name,
         "description": tool.description,
         "provider": tool.provider,
+        "provider_key": normalize_provider(tool.provider),
         "status": tool.status,
         "category": tool.category,
         "source": tool.source,
@@ -37,6 +39,7 @@ def _serialize_capability(tool: ToolDefinition) -> dict:
             "path": detail_path,
             "url": detail_url,
         },
+        "required_credentials": get_provider_requirements(tool.provider),
         "artifacts": manifest["artifacts"],
         "created_at": tool.created_at.isoformat() if tool.created_at else None,
         "updated_at": tool.updated_at.isoformat() if tool.updated_at else None,

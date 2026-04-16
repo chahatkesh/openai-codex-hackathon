@@ -12,6 +12,7 @@ from app.services.artifact_store import (
     artifact_uri_for_key,
     download_text,
 )
+from app.services.provider_credentials import get_provider_requirements
 
 DYNAMIC_TOOLS_DIR = Path("/tmp/fusekit_dynamic_tools")
 MANIFESTS_DIR = DYNAMIC_TOOLS_DIR / "manifests"
@@ -135,6 +136,7 @@ def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
         "token_env_var": "FUSEKIT_TOKEN",
         "local_development_token": settings.demo_auth_token,
     }
+    manifest["required_credentials"] = get_provider_requirements(tool.provider)
     manifest["example_request"] = _build_example_request(tool.input_schema)
     manifest["manifest_endpoint"] = {
         "method": "GET",

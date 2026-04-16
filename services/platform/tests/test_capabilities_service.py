@@ -46,6 +46,7 @@ def test_build_runtime_manifest_contains_runtime_contract():
     assert manifest["auth"]["type"] == "bearer"
     assert manifest["auth"]["token_env_var"] == "FUSEKIT_TOKEN"
     assert manifest["auth"]["local_development_token"] == "demo-token-fusekit-2026"
+    assert isinstance(manifest["required_credentials"], list)
     assert manifest["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
     assert manifest["manifest_pointer"]["artifact_key"] == "manifests/get_producthunt.json"
     assert manifest["manifest_pointer"]["http_url"] == "http://localhost:8000/api/capabilities/get_producthunt/manifest"

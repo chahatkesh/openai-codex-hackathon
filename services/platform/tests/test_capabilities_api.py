@@ -58,6 +58,7 @@ async def test_get_capability_manifest_http_returns_runtime_contract(monkeypatch
     assert payload["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
     assert payload["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
     assert payload["manifest_endpoint"]["url"] == "http://localhost:8000/api/capabilities/get_producthunt/manifest"
+    assert isinstance(payload["required_credentials"], list)
 
 
 @pytest.mark.asyncio
@@ -70,6 +71,7 @@ async def test_list_capabilities_returns_runtime_metadata():
     assert payload[0]["runtime_endpoint"]["url"].startswith("http://localhost:8000/api/execute/")
     assert payload[0]["manifest_endpoint"]["url"].startswith("http://localhost:8000/api/capabilities/")
     assert payload[0]["detail_endpoint"]["url"].startswith("http://localhost:8000/api/capabilities/")
+    assert isinstance(payload[0]["required_credentials"], list)
     assert payload[0]["artifacts"]["preferred_source"] in {"local", "s3"}
 
 
@@ -85,6 +87,7 @@ async def test_get_capability_detail_returns_manifest(monkeypatch):
     assert payload["name"] == "get_producthunt"
     assert payload["manifest"]["runtime_endpoint"]["url"] == "http://localhost:8000/api/execute/get_producthunt"
     assert payload["manifest"]["artifacts"]["manifest"]["artifact_key"] == "manifests/get_producthunt.json"
+    assert isinstance(payload["required_credentials"], list)
 
 
 @pytest.mark.asyncio

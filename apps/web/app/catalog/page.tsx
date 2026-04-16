@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CatalogTable } from "@/components/CatalogTable";
 import { ToolCard } from "@/components/ToolCard";
@@ -45,7 +46,12 @@ export default function CatalogPage() {
               Browse every tool currently available to Codex. New integrations appear here after publish.
             </p>
           </div>
-          <span className="pill bg-[rgba(245,78,0,0.1)] text-[color:var(--accent)]">{tools.length} visible</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="pill bg-[rgba(245,78,0,0.1)] text-[color:var(--accent)]">{tools.length} visible</span>
+            <Link href="/credentials" className="warm-link text-sm underline">
+              Manage provider credentials
+            </Link>
+          </div>
         </div>
       </header>
 

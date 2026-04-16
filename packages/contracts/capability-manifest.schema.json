@@ -21,7 +21,8 @@
     "example_request",
     "manifest_endpoint",
     "manifest_pointer",
-    "artifacts"
+    "artifacts",
+    "required_credentials"
   ],
   "properties": {
     "tool_name": { "type": "string" },
@@ -109,6 +110,17 @@
         "preferred_source": { "type": "string" },
         "runtime_module": { "type": "object" },
         "manifest": { "type": "object" }
+      }
+    },
+    "required_credentials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "label"],
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" }
+        }
       }
     },
     "docs_url": { "type": "string" },

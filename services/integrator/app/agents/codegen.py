@@ -43,7 +43,8 @@ async def run_codegen(
         f"Tool definition schema:\n{schema_text}\n\n"
         "Implementation constraints:\n"
         "- Use httpx AsyncClient\n"
-        "- Read credentials from env vars where needed\n"
+        "- Prefer provider credentials via app.services.provider_credentials.get_provider_credentials(provider_name)\n"
+        "- Fall back to env vars only if provider credentials are unavailable\n"
         "- Return string output\n"
         "- Include basic error handling"
     )

@@ -5,12 +5,14 @@ export type CatalogItem = {
   name: string;
   description: string;
   provider: string;
+  provider_key?: string;
   cost_per_call: number;
   status: ToolStatus;
   category?: string;
   input_schema?: Record<string, unknown>;
   source?: string;
   version?: number;
+  required_credentials?: Array<{ key: string; label: string }>;
   created_at?: string;
 };
 
@@ -55,6 +57,15 @@ export type IntegrationJobStatus = {
   current_stage?: string | null;
   error_log?: string | null;
   resulting_tool_id?: string | null;
+};
+
+export type ProviderCredentialStatus = {
+  provider: string;
+  display_name: string;
+  requirements: Array<{ key: string; label: string }>;
+  configured_keys: string[];
+  is_configured: boolean;
+  affected_tools: Array<{ name: string; status: string }>;
 };
 
 export class ApiError extends Error {
@@ -164,6 +175,17 @@ export async function getJobStatus(jobId: string) {
 
 export async function getRecentJobs(limit = 20) {
   return fetchJson<IntegrationJobStatus[]>(`/api/integrate?limit=${limit}`);
+}
+
+export async function getProviderCredentials() {
+  return fetchJson<ProviderCredentialStatus[]>("/api/credentials/providers");
+}
+
+export async function saveProviderCredentials(provider: string, values: Record<string, string>) {
+  return fetchJson<ProviderCredentialStatus>(`/api/credentials/${provider}`, {
+    method: "POST",
+    body: JSON.stringify({ values }),
+  });
 }
 
 export const apiBaseUrl = API_BASE_URL;
