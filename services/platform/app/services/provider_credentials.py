@@ -124,3 +124,21 @@ async def list_provider_credential_statuses() -> list[dict[str, Any]]:
                 }
             )
         return payload
+
+
+async def get_provider_credential_status(provider: str) -> dict[str, Any]:
+    normalized = normalize_provider(provider)
+    all_statuses = await list_provider_credential_statuses()
+    for status in all_statuses:
+        if status["provider"] == normalized:
+            return status
+
+    requirements = get_provider_requirements(normalized)
+    return {
+        "provider": normalized,
+        "display_name": provider,
+        "requirements": requirements,
+        "configured_keys": [],
+        "is_configured": False,
+        "affected_tools": [],
+    }

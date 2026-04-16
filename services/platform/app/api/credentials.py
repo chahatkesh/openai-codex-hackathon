@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.services.provider_credentials import (
+    get_provider_credential_status,
     get_provider_credentials,
     get_provider_requirements,
     list_provider_credential_statuses,
@@ -30,12 +31,15 @@ async def get_provider_credential_detail(provider: str):
     normalized = normalize_provider(provider)
     requirements = get_provider_requirements(normalized)
     values = await get_provider_credentials(normalized)
+    status = await get_provider_credential_status(normalized)
     return {
         "provider": normalized,
+        "display_name": status["display_name"],
         "requirements": requirements,
         "configured_keys": sorted(values.keys()),
         "is_configured": bool(requirements)
         and {item["key"] for item in requirements}.issubset(values.keys()),
+        "affected_tools": status["affected_tools"],
     }
 
 

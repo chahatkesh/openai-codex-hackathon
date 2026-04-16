@@ -85,7 +85,7 @@ export default function CredentialsPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {provider.affected_tools.map((tool) => (
+              {(provider.affected_tools ?? []).map((tool) => (
                 <span key={tool.name} className="pill">
                   {tool.name} · {tool.status}
                 </span>

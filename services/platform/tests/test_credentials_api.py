@@ -36,12 +36,24 @@ async def test_get_provider_credential_detail_reports_configuration(monkeypatch)
     async def fake_get(_provider: str):
         return {"TWILIO_ACCOUNT_SID": "configured"}
 
+    async def fake_status(_provider: str):
+        return {
+            "provider": "twilio",
+            "display_name": "twilio",
+            "requirements": [{"key": "TWILIO_ACCOUNT_SID", "label": "Twilio Account SID"}],
+            "configured_keys": ["TWILIO_ACCOUNT_SID"],
+            "is_configured": True,
+            "affected_tools": [{"name": "send_twilio_sms_v2", "status": "pending_credentials"}],
+        }
+
     monkeypatch.setattr("app.api.credentials.get_provider_credentials", fake_get)
+    monkeypatch.setattr("app.api.credentials.get_provider_credential_status", fake_status)
 
     payload = await get_provider_credential_detail("twilio")
 
     assert payload["is_configured"] is True
     assert payload["configured_keys"] == ["TWILIO_ACCOUNT_SID"]
+    assert payload["affected_tools"][0]["name"] == "send_twilio_sms_v2"
 
 
 @pytest.mark.asyncio
@@ -60,8 +72,19 @@ async def test_upsert_provider_credentials_persists_and_returns_detail(monkeypat
     async def fake_get(_provider: str):
         return {"TWILIO_ACCOUNT_SID": "configured"}
 
+    async def fake_status(_provider: str):
+        return {
+            "provider": "twilio",
+            "display_name": "twilio",
+            "requirements": [{"key": "TWILIO_ACCOUNT_SID", "label": "Twilio Account SID"}],
+            "configured_keys": ["TWILIO_ACCOUNT_SID"],
+            "is_configured": True,
+            "affected_tools": [{"name": "send_twilio_sms_v2", "status": "live"}],
+        }
+
     monkeypatch.setattr("app.api.credentials.set_provider_credentials", fake_set)
     monkeypatch.setattr("app.api.credentials.get_provider_credentials", fake_get)
+    monkeypatch.setattr("app.api.credentials.get_provider_credential_status", fake_status)
 
     payload = await upsert_provider_credentials(
         "twilio",
@@ -70,3 +93,4 @@ async def test_upsert_provider_credentials_persists_and_returns_detail(monkeypat
 
     assert captured["provider"] == "twilio"
     assert payload["is_configured"] is True
+    assert payload["affected_tools"][0]["status"] == "live"
