@@ -1,0 +1,1 @@
+codex mcp add fusekit --url http://localhost:8000/mcp/http && codex mcp list
