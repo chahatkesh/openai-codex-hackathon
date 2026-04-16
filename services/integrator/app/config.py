@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     docs_fetch_parse_pdf: bool = True
     docs_fetch_parse_openapi: bool = True
     docs_fetch_extract_code_blocks: bool = True
+    github_token: str = ""
+    github_api_base_url: str = "https://api.github.com"
+    github_default_owner: str = ""
+    github_default_repo: str = ""
+    github_default_base_branch: str = ""
+    github_branch_prefix: str = "fusekit/publish"
+    github_draft_prs: bool = True
 
     model_config = {"env_file": str(_ENV_FILE), "env_file_encoding": "utf-8", "extra": "ignore"}
 

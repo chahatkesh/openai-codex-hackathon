@@ -8,9 +8,9 @@
     "build": "pnpm --filter @fusekit/web build",
     "start": "pnpm --filter @fusekit/web start",
     "lint": "pnpm --filter @fusekit/web lint",
-    "db:seed": "cd services/platform && python -m app.db_init",
-    "db:migrate": "cd infra && alembic upgrade head",
-    "db:migration:create": "cd infra && alembic revision --autogenerate -m",
-    "setup": "python3 -m venv .venv && source .venv/bin/activate && cd services/platform && pip install -e . && cd ../integrator && pip install -e . && pnpm install"
+    "db:seed": "cd services/platform && ../../.venv/bin/python -m app.db_init",
+    "db:migrate": "cd infra && ../.venv/bin/alembic upgrade head",
+    "db:migration:create": "cd infra && ../.venv/bin/alembic revision --autogenerate -m",
+    "setup": "python3 -m venv .venv && .venv/bin/python -m pip install -e services/platform && .venv/bin/python -m pip install -e services/integrator && pnpm install"
   }
 }
