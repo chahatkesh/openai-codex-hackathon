@@ -1,4 +1,4 @@
-"""Remove a generated FuseKit capability and its local artifacts for clean retesting."""
+"""Remove one or more FuseKit capabilities and their local artifacts for clean retesting."""
 
 from __future__ import annotations
 
@@ -105,10 +105,15 @@ async def remove_generated_tool(tool_name: str) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/remove_generated_tool.py <tool_name>")
+    if len(sys.argv) < 2:
+        print("Usage: python scripts/remove_generated_tool.py <tool_name> [<tool_name> ...]")
         return 1
-    asyncio.run(remove_generated_tool(sys.argv[1]))
+
+    async def _run() -> None:
+        for tool_name in sys.argv[1:]:
+            await remove_generated_tool(tool_name)
+
+    asyncio.run(_run())
     return 0
 
 
