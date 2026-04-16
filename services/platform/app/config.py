@@ -2,7 +2,17 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings
 
-_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+
+def _find_env_file() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        candidate = parent / ".env"
+        if candidate.exists():
+            return candidate
+    return current.parents[2] / ".env"
+
+
+_ENV_FILE = _find_env_file()
 
 
 class Settings(BaseSettings):

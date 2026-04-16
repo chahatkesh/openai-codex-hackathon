@@ -10,10 +10,17 @@ import asyncio
 import sys
 from pathlib import Path
 
-# Ensure repo-root scripts/ is importable when running from services/platform
-# Path to this file: services/platform/app/db_init.py
-# Parents: app (0), platform (1), services (2), fusekit (3)
-repo_root = Path(__file__).resolve().parents[3]
+
+def _find_repo_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "AGENTS.md").exists() or (parent / "packages").exists():
+            return parent
+    return current.parents[2]
+
+
+# Ensure repo-root modules are importable in both local and container layouts.
+repo_root = _find_repo_root()
 sys.path.insert(0, str(repo_root))
 
 try:

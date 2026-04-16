@@ -4,7 +4,17 @@ from pathlib import Path
 from app.llm import LLMClient
 from app.schemas import APISpecification, GeneratedTool
 
-TOOL_SCHEMA_PATH = Path(__file__).resolve().parents[4] / "packages" / "contracts" / "tool-definition.schema.json"
+
+def _find_tool_schema_path() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        candidate = parent / "packages" / "contracts" / "tool-definition.schema.json"
+        if candidate.exists():
+            return candidate
+    return current.parents[2] / "tool-definition.schema.json"
+
+
+TOOL_SCHEMA_PATH = _find_tool_schema_path()
 
 SYSTEM_PROMPT = """Generate a FuseKit tool definition and executable python source.
 Return strict JSON with keys:
