@@ -10,6 +10,8 @@ async def execute(to: str, subject: str, body: str) -> str:
     """Send an email using the Resend API."""
     if not settings.resend_api_key:
         return "ERROR: Resend API key not configured. Set RESEND_API_KEY in .env"
+    if not settings.resend_from_email:
+        return "ERROR: Resend sender not configured. Set RESEND_FROM_EMAIL in .env"
 
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(
@@ -19,7 +21,7 @@ async def execute(to: str, subject: str, body: str) -> str:
                 "Content-Type": "application/json",
             },
             json={
-                "from": "FuseKit <onboarding@resend.dev>",
+                "from": f"FuseKit <{settings.resend_from_email}>",
                 "to": [to],
                 "subject": subject,
                 "text": body,

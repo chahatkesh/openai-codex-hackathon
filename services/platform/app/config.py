@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     serper_api_key: str = ""  # for search_web
 
     resend_api_key: str = ""  # for send_email via Resend
+    resend_from_email: str = ""  # verified sender for Resend
 
     # Wallet defaults
     default_wallet_balance: int = 10000  # 10000 credits = $10 for demo
