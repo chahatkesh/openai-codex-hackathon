@@ -71,6 +71,37 @@ textarea {
     var(--background);
 }
 
+.nav-shell {
+  border: 1px solid rgba(38, 37, 30, 0.1);
+  border-color: var(--border);
+  border-radius: 8px;
+  background: rgba(247, 247, 244, 0.9);
+  box-shadow:
+    rgba(0, 0, 0, 0.04) 0 14px 42px,
+    rgba(38, 37, 30, 0.06) 0 0 0 1px;
+}
+
+.landing-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.premium-console {
+  border: 1px solid rgba(38, 37, 30, 0.14);
+  border-radius: 8px;
+  background: #26251e;
+  box-shadow:
+    rgba(0, 0, 0, 0.16) 0 34px 80px,
+    rgba(0, 0, 0, 0.08) 0 14px 32px,
+    rgba(38, 37, 30, 0.1) 0 0 0 1px;
+  color: #f7f7f4;
+}
+
+.premium-rule {
+  background: rgba(38, 37, 30, 0.12);
+  height: 1px;
+}
+
 .display-title {
   font-family: var(--font-display);
   font-size: 4rem;
