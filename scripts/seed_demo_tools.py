@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.db import async_session
 from app.models import ToolDefinition, User
-from app.mcp_server import DEMO_USER_TOKEN
+from app.services.capabilities_service import DEMO_USER_TOKEN
 
 
 SEED_TOOLS = [
@@ -182,6 +182,32 @@ SEED_TOOLS = [
                         },
                     },
                 }
+            },
+        },
+    },
+    {
+        "name": "get_capability_manifest",
+        "description": "Return the FuseKit runtime manifest for an existing capability. Use this when Codex is building a deployed app and needs the HTTP endpoint contract for a FuseKit capability.",
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.get_capability_manifest",
+        "input_schema": {
+            "type": "object",
+            "required": ["capability_name"],
+            "properties": {
+                "capability_name": {
+                    "type": "string",
+                    "description": "Existing FuseKit capability/tool name, e.g. get_producthunt.",
+                }
+            },
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "manifest": {"type": "object"},
             },
         },
     },
