@@ -14,7 +14,7 @@ export function WalletCard({ balance }: Props) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="surface-card elevated-card overflow-hidden p-6"
+      className="surface-card overflow-hidden p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
