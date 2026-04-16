@@ -19,79 +19,81 @@ export function Nav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/5 bg-[color:var(--background)]/80 backdrop-blur-xl shadow-sm transition-all">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="group flex items-center gap-3">
-          <motion.div
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-400 text-slate-900 font-black shadow-lg shadow-teal-500/20"
+    <header className="sticky top-0 z-30 border-b table-rule bg-[color:var(--background)]/88 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <Link href="/" className="group flex min-w-0 items-center gap-3">
+          <motion.span
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border table-rule bg-[color:var(--surface-strong)] text-[color:var(--text)]"
+            aria-hidden="true"
           >
-            <Box size={20} />
-          </motion.div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold tracking-[0.2em] text-teal-300 group-hover:text-teal-200 transition-colors">
-              FUSEKIT
-            </p>
-            <p className="text-xs text-[color:var(--text-muted)] font-medium">Agentic API Hub</p>
-          </div>
+            <Box size={18} strokeWidth={1.8} />
+          </motion.span>
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-sm font-medium text-[color:var(--text)] transition-colors group-hover:text-[color:var(--accent)]">
+              FuseKit
+            </span>
+            <span className="block truncate text-xs text-[color:var(--text-muted)]">Agent tool marketplace</span>
+          </span>
         </Link>
 
-        {/* Desktop Menu */}
-        <nav className="hidden items-center gap-2 md:flex">
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
           {LINKS.map((link) => {
-            const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "text-teal-300"
-                    : "text-[color:var(--text-muted)] hover:text-white"
+                className={`relative rounded-[8px] px-3 py-2 text-sm transition-colors ${
+                  active ? "text-[color:var(--text)]" : "text-[color:var(--text-muted)] hover:text-[color:var(--text)]"
                 }`}
               >
-                {active && (
-                  <motion.div
+                {active ? (
+                  <motion.span
                     layoutId="nav-indicator"
-                    className="absolute inset-0 rounded-lg bg-teal-500/10"
+                    className="absolute inset-0 rounded-[8px] bg-[color:var(--surface)]"
                     initial={false}
-                    transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                    transition={{ type: "spring", bounce: 0.22, duration: 0.42 }}
                   />
-                )}
+                ) : null}
                 <span className="relative z-10">{link.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Mobile Menu Toggle */}
-        <button 
-          className="md:hidden p-2 text-slate-400 hover:text-white"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        <Link href="/integrate" className="button-warm hidden md:inline-flex">
+          Request tool
+        </Link>
+
+        <button
+          type="button"
+          className="button-warm md:hidden"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileMenuOpen}
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
-      {/* Mobile Nav */}
-      <motion.div 
+      <motion.nav
         initial={false}
         animate={{ height: mobileMenuOpen ? "auto" : 0, opacity: mobileMenuOpen ? 1 : 0 }}
-        className="md:hidden overflow-hidden bg-[color:var(--surface)] border-b border-white/5"
+        className="overflow-hidden border-t table-rule bg-[color:var(--background-soft)] md:hidden"
+        aria-label="Mobile navigation"
       >
-        <div className="px-4 py-3 space-y-1">
+        <div className="space-y-1 px-4 py-3">
           {LINKS.map((link) => {
-            const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(`${link.href}/`));
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-teal-500/15 text-teal-300"
-                    : "text-[color:var(--text-muted)] hover:bg-white/5 hover:text-white"
+                className={`block rounded-[8px] px-3 py-2 text-sm ${
+                  active ? "bg-[color:var(--surface)] text-[color:var(--text)]" : "text-[color:var(--text-muted)]"
                 }`}
               >
                 {link.label}
@@ -99,7 +101,7 @@ export function Nav() {
             );
           })}
         </div>
-      </motion.div>
+      </motion.nav>
     </header>
   );
 }

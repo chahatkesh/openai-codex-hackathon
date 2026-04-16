@@ -61,79 +61,76 @@ export default function WalletPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold text-white">Wallet</h1>
-        <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-          Track credits, top up quickly, and review usage by tool.
-        </p>
+    <section className="space-y-6 pb-12">
+      <header className="surface-card-light p-6">
+        <p className="eyebrow">Credits and enforcement</p>
+        <h1 className="section-title mt-3 text-[color:var(--text)]">Wallet</h1>
+        <p className="body-serif mt-2 max-w-2xl">Track balance, top up quickly, and inspect usage before demo calls drain credits.</p>
       </header>
 
       {balance ? <WalletCard balance={balance} /> : null}
-      {error ? <p className="text-sm text-amber-200">{error}</p> : null}
+      {error ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{error}</p> : null}
 
-      <form onSubmit={handleTopup} className="rounded-xl border border-white/10 bg-[color:var(--surface)] p-4">
+      <form onSubmit={handleTopup} className="surface-card-light p-5">
         <label className="block text-sm text-[color:var(--text-muted)]">
-          Add Credits
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              inputMode="numeric"
-              className="w-40 rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white"
-            />
-            <button
-              disabled={pending}
-              className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-200 disabled:opacity-60"
-            >
-              {pending ? "Processing..." : "Add Credits"}
+          Add credits
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" className="input-warm w-44" />
+            <button disabled={pending} className={`button-warm button-accent ${pending ? "cursor-not-allowed opacity-55" : ""}`}>
+              {pending ? "Processing..." : "Add credits"}
             </button>
           </div>
         </label>
       </form>
 
-      <section className="rounded-xl border border-white/10 bg-[color:var(--surface)] p-4">
-        <h2 className="text-lg font-semibold text-white">Recent Transactions</h2>
-        <div className="mt-3 overflow-x-auto">
+      <section className="surface-card-light p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">Ledger</p>
+            <h2 className="title-small mt-1 text-[color:var(--text)]">Recent transactions</h2>
+          </div>
+          <span className="pill">{transactions.length} rows</span>
+        </div>
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+            <thead className="border-b table-rule text-xs text-[color:var(--text-muted)]">
               <tr>
-                <th className="py-2">Time</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Amount</th>
-                <th className="py-2">Tool</th>
-                <th className="py-2">Balance After</th>
+                <th className="py-3 font-medium">Time</th>
+                <th className="py-3 font-medium">Type</th>
+                <th className="py-3 font-medium">Amount</th>
+                <th className="py-3 font-medium">Tool</th>
+                <th className="py-3 font-medium">Balance after</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[rgba(38,37,30,0.1)]">
               {transactions.slice(0, 12).map((txn) => (
-                <tr key={txn.id} className="border-t border-white/10">
-                  <td className="py-2 text-[color:var(--text-muted)]">
-                    {txn.created_at ? new Date(txn.created_at).toLocaleString() : "-"}
-                  </td>
-                  <td className="py-2 text-white">{txn.type}</td>
-                  <td className="py-2 text-white">{txn.amount}</td>
-                  <td className="py-2 text-[color:var(--text-muted)]">{txn.tool_name ?? "-"}</td>
-                  <td className="py-2 text-[color:var(--text-muted)]">{txn.balance_after}</td>
+                <tr key={txn.id}>
+                  <td className="py-3 text-[color:var(--text-muted)]">{txn.created_at ? new Date(txn.created_at).toLocaleString() : "-"}</td>
+                  <td className="py-3 text-[color:var(--text)]">{txn.type}</td>
+                  <td className="py-3 mono-text text-xs text-[color:var(--accent)]">{txn.amount}</td>
+                  <td className="py-3 text-[color:var(--text-muted)]">{txn.tool_name ?? "-"}</td>
+                  <td className="py-3 text-[color:var(--text-muted)]">{txn.balance_after}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {!transactions.length ? <p className="mt-4 text-sm text-[color:var(--text-muted)]">No transactions yet.</p> : null}
         </div>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-[color:var(--surface)] p-4">
-        <h2 className="text-lg font-semibold text-white">Usage by Tool</h2>
-        <div className="mt-3 space-y-2">
+      <section className="surface-card p-5">
+        <p className="eyebrow">Tool usage</p>
+        <h2 className="title-small mt-1 text-[color:var(--text)]">Usage by tool</h2>
+        <div className="mt-4 divide-y divide-[rgba(38,37,30,0.1)]">
           {usageRows.map(([toolName, info]) => (
-            <article key={toolName} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-sm">
-              <p className="text-white">{toolName}</p>
+            <article key={toolName} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+              <p className="mono-text break-words text-xs text-[color:var(--text)]">{toolName}</p>
               <p className="text-[color:var(--text-muted)]">
-                {info.calls} calls • {info.total_credits} credits • {info.errors} errors
+                {info.calls} calls / {info.total_credits} credits / {info.errors} errors
               </p>
             </article>
           ))}
-          {!usageRows.length ? <p className="text-sm text-[color:var(--text-muted)]">No usage data yet.</p> : null}
+          {!usageRows.length ? <p className="py-3 text-sm text-[color:var(--text-muted)]">No usage data yet.</p> : null}
         </div>
       </section>
     </section>

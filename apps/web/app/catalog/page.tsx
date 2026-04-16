@@ -35,46 +35,44 @@ export default function CatalogPage() {
   }, [status, category]);
 
   return (
-    <section className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold text-white">Catalog</h1>
-        <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-          Browse every tool currently available to Codex. New tools appear automatically after integration publishes.
-        </p>
+    <section className="space-y-6 pb-12">
+      <header className="surface-card-light p-6">
+        <p className="eyebrow">Tool registry</p>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="section-title text-[color:var(--text)]">Catalog</h1>
+            <p className="body-serif mt-2 max-w-2xl">
+              Browse every tool currently available to Codex. New integrations appear here after publish.
+            </p>
+          </div>
+          <span className="pill bg-[rgba(245,78,0,0.1)] text-[color:var(--accent)]">{tools.length} visible</span>
+        </div>
       </header>
 
-      <div className="grid gap-3 rounded-xl border border-white/10 bg-[color:var(--surface)] p-4 md:grid-cols-2">
+      <div className="surface-card grid gap-4 p-4 md:grid-cols-2">
         <label className="text-sm text-[color:var(--text-muted)]">
           Status
-          <select
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white"
-          >
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="input-warm mt-2">
             {STATUS_FILTERS.map((item) => (
               <option key={item} value={item}>
-                {item}
+                {item.replaceAll("_", " ")}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm text-[color:var(--text-muted)]">
           Category
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-white"
-          >
+          <select value={category} onChange={(event) => setCategory(event.target.value)} className="input-warm mt-2">
             {CATEGORY_FILTERS.map((item) => (
               <option key={item} value={item}>
-                {item}
+                {item.replaceAll("_", " ")}
               </option>
             ))}
           </select>
         </label>
       </div>
 
-      {error ? <p className="text-sm text-amber-200">{error}</p> : null}
+      {error ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{error}</p> : null}
 
       <div className="hidden lg:block">
         <CatalogTable tools={tools} />
@@ -86,9 +84,7 @@ export default function CatalogPage() {
       </div>
 
       {!tools.length && !error ? (
-        <p className="rounded-xl border border-white/10 bg-[color:var(--surface)] p-4 text-sm text-[color:var(--text-muted)]">
-          No tools match the current filters yet.
-        </p>
+        <p className="surface-card-light p-4 text-sm text-[color:var(--text-muted)]">No tools match the current filters yet.</p>
       ) : null}
     </section>
   );

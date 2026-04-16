@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { LiveFeed } from "@/components/LiveFeed";
-import { EndpointUnavailableError, getJobStatus, getRecentJobs, getRecentTools, type CatalogItem, type IntegrationJobStatus } from "@/lib/api";
+import {
+  EndpointUnavailableError,
+  getJobStatus,
+  getRecentJobs,
+  getRecentTools,
+  type CatalogItem,
+  type IntegrationJobStatus,
+} from "@/lib/api";
 import { addTrackedJobId, getTrackedJobIds } from "@/lib/jobs";
 
 type JobFeed = { jobId: string; status: IntegrationJobStatus };
@@ -26,17 +33,15 @@ export default function FeedPage() {
         }
       }
 
-      // Merge localStorage job IDs with server-side recent jobs
       try {
         const serverJobs = await getRecentJobs(20);
-        // Track server-side job IDs in localStorage so they survive tab refreshes
         serverJobs.forEach((j) => {
           const id = j.job_id ?? j.id;
           if (id) addTrackedJobId(id);
         });
         setJobsError(null);
       } catch {
-        // Non-fatal — fall through to localStorage-only path
+        // Non-fatal: local tracked IDs still render when available.
       }
 
       const jobIds = getTrackedJobIds();
@@ -65,23 +70,20 @@ export default function FeedPage() {
   }, []);
 
   return (
-    <section className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-semibold text-white">Live Feed</h1>
-        <p className="mt-2 text-sm text-[color:var(--text-muted)]">
-          Timeline of recently published tools and tracked integration jobs.
-        </p>
+    <section className="space-y-6 pb-12">
+      <header className="surface-card-light p-6">
+        <p className="eyebrow">Live integration feed</p>
+        <h1 className="section-title mt-3 text-[color:var(--text)]">Feed</h1>
+        <p className="body-serif mt-2 max-w-2xl">Watch recently published tools and tracked pipeline jobs move from request to catalog.</p>
       </header>
 
-      {recentError ? <p className="text-sm text-amber-200">{recentError}</p> : null}
-      {jobsError ? <p className="text-sm text-amber-200">{jobsError}</p> : null}
+      {recentError ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{recentError}</p> : null}
+      {jobsError ? <p className="surface-card-light p-3 text-sm text-[color:var(--gold)]">{jobsError}</p> : null}
 
       <LiveFeed recentTools={recentTools} jobStatuses={jobs} />
 
       {!recentTools.length && !jobs.length ? (
-        <p className="rounded-xl border border-white/10 bg-[color:var(--surface)] p-4 text-sm text-[color:var(--text-muted)]">
-          No live events yet. Trigger an integration to populate this feed.
-        </p>
+        <p className="surface-card-light p-4 text-sm text-[color:var(--text-muted)]">No live events yet. Trigger an integration to populate this feed.</p>
       ) : null}
     </section>
   );
