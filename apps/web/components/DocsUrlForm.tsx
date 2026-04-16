@@ -1,15 +1,6 @@
 "use client";
 
 import { useState } from "react";
-
-type Props = {
-  onSubmit: (payload: { docsUrl: string; toolName?: string }) => Promise<void>;
-  disabled?: boolean;
-};
-
-"use client";
-
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { PlugZap, Link as LinkIcon, Fingerprint } from "lucide-react";
 
