@@ -40,7 +40,7 @@ async def test_queue_missing_tool_integration_persists_job(monkeypatch):
     assert len(fake_session.added) == 1
     job = fake_session.added[0]
     assert job.triggered_by == "mcp_tool_miss"
-    assert job.docs_url == "mcp://tool-miss/send_slack_message"
+    assert job.docs_url == mcp_server.build_tool_miss_docs_url("send_slack_message")
     assert captured["requested_tool_name"] == "send_slack_message"
 
 

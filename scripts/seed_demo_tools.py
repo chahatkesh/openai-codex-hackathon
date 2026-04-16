@@ -1,4 +1,4 @@
-"""Seed the database with demo user and 5 initial tools."""
+"""Seed the database with demo user and built-in FuseKit tools."""
 
 import asyncio
 
@@ -182,6 +182,42 @@ SEED_TOOLS = [
                         },
                     },
                 }
+            },
+        },
+    },
+    {
+        "name": "request_integration",
+        "description": "Request FuseKit to add a missing API or capability to the catalog. Use this when the tool you need is not already exposed in tools/list, before giving up on the task.",
+        "provider": "fusekit",
+        "cost_per_call": 1,
+        "status": "live",
+        "category": "productivity",
+        "source": "seed",
+        "implementation_module": "app.tools.request_integration",
+        "input_schema": {
+            "type": "object",
+            "required": ["capability_description"],
+            "properties": {
+                "capability_description": {
+                    "type": "string",
+                    "description": "Plain-English description of the missing capability or provider integration needed.",
+                },
+                "docs_url": {
+                    "type": "string",
+                    "description": "Optional docs URL to prioritize for integration discovery.",
+                },
+                "requested_tool_name": {
+                    "type": "string",
+                    "description": "Optional preferred snake_case tool name, e.g. send_slack_message.",
+                },
+            },
+        },
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "message": {"type": "string"},
+                "job_id": {"type": "string"},
+                "docs_url": {"type": "string"},
             },
         },
     },

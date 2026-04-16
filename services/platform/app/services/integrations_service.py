@@ -24,14 +24,19 @@ class IntegrationForwardPayload:
     requested_tool_name: str | None = None
 
 
-def build_tool_miss_docs_url(tool_name: str) -> str:
-    """Return a real HTTP search URL for an unknown MCP tool name.
+def build_discovery_docs_url(query: str) -> str:
+    """Return a real HTTP search URL for capability/API discovery.
 
     The integrator's discovery agent will fetch this page and infer the API
     from the search results, rather than receiving an unroutable mcp:// URI.
     """
-    safe_name = quote(tool_name.strip().lower().replace("_", " ") or "unknown api")
+    safe_name = quote(query.strip().lower().replace("_", " ") or "unknown api")
     return f"https://www.google.com/search?q={safe_name}+API+documentation"
+
+
+def build_tool_miss_docs_url(tool_name: str) -> str:
+    """Return the docs-discovery URL for an unknown MCP tool name."""
+    return build_discovery_docs_url(tool_name)
 
 
 async def create_integration_job(

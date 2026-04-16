@@ -66,6 +66,7 @@ def load_all() -> None:
         "app.tools.send_sms",
         "app.tools.search_web",
         "app.tools.get_producthunt",
+        "app.tools.request_integration",
     ]
     for mod in modules:
         importlib.import_module(mod)

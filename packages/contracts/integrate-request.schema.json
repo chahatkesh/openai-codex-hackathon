@@ -1,16 +1,36 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "IntegrateRequest",
-  "type": "object",
-  "required": ["job_id", "docs_url"],
-  "properties": {
-    "job_id": { "type": "string", "format": "uuid" },
-    "docs_url": { "type": "string", "format": "uri" },
-    "requested_by": {
-      "type": "string",
-      "enum": ["user", "mcp_tool_miss", "crawler"],
-      "default": "user"
+  "description": "Supports both the public platform trigger payload and the internal platform-to-integrator handoff payload.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["docs_url"],
+      "properties": {
+        "docs_url": { "type": "string", "format": "uri" },
+        "requested_by": {
+          "type": "string",
+          "enum": ["user", "mcp_tool_miss", "crawler"],
+          "default": "user"
+        },
+        "requested_tool_name": { "type": "string" }
+      },
+      "additionalProperties": false
     },
-    "requested_tool_name": { "type": "string" }
-  }
+    {
+      "type": "object",
+      "required": ["job_id", "docs_url"],
+      "properties": {
+        "job_id": { "type": "string", "format": "uuid" },
+        "docs_url": { "type": "string", "format": "uri" },
+        "requested_by": {
+          "type": "string",
+          "enum": ["user", "mcp_tool_miss", "crawler"],
+          "default": "user"
+        },
+        "requested_tool_name": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  ]
 }
