@@ -2,220 +2,133 @@
 
 # FuseKit
 
-> Agentic API marketplace for Codex: one MCP URL for discovering, calling, billing, and growing tools.
+> A self-growing API marketplace for Codex.
 
 [![Built for OpenAI Codex Hackathon](https://img.shields.io/badge/OpenAI%20Codex-Hackathon%202026-412991)](https://openai.com)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-platform-009688)](https://fastapi.tiangolo.com)
 [![MCP](https://img.shields.io/badge/MCP-enabled-111827)](https://modelcontextprotocol.io)
-[![Turborepo](https://img.shields.io/badge/Turborepo-monorepo-EF4444)](https://turbo.build)
+[![FastAPI](https://img.shields.io/badge/FastAPI-platform-009688)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-dashboard-black)](https://nextjs.org)
 
-## Why It Exists
+## What Is FuseKit?
 
-Codex can plan and build software quickly, but real apps still slow down when they need external APIs. Developers have to find docs, write wrappers, handle credentials, track usage, and make the result reusable.
+FuseKit gives Codex one place to discover, call, pay for, and grow API tools.
 
-FuseKit turns those APIs into reusable platform capabilities. Codex talks to FuseKit over MCP at build time, while deployed apps can call the same capabilities over HTTP at runtime.
+Instead of asking developers to manually find API docs, write wrappers, handle credentials, and wire billing, FuseKit exposes a marketplace of callable tools through MCP. Codex can ask FuseKit what tools exist, call the tools it needs, and request a new integration when something is missing.
+
+The simple idea:
+
+```text
+Codex needs a capability
+        |
+        v
+FuseKit checks the catalog
+        |
+        |-- tool exists --> wallet check --> execute API --> return result
+        |
+        `-- tool missing --> Codex-powered integration pipeline --> publish new tool
+```
 
 ## What It Does
 
-- Exposes an MCP server with `tools/list` and `tools/call`.
-- Stores tool definitions, costs, schemas, and status in Postgres.
-- Checks wallet balance and deducts credits before every billable tool call.
-- Executes built-in tools such as `scrape_url`, `send_email`, `send_sms`, `search_web`, and `get_producthunt`.
-- Returns deterministic MCP errors, including `TOOL_NOT_FOUND` and `INSUFFICIENT_FUNDS`.
-- Queues missing capabilities as integration jobs.
-- Runs a bounded integration pipeline: discovery, reader, codegen, test/fix, publish.
-- Publishes successful tools back into the catalog so the next Codex request can use them.
-- Provides a Next.js dashboard for catalog browsing, wallet state, credentials, live feed, and manual docs URL integration.
+- Gives Codex an MCP server with `tools/list` and `tools/call`.
+- Runs useful tools such as `scrape_url`, `send_email`, `send_sms`, `search_web`, and `get_producthunt`.
+- Checks wallet balance before every paid tool call.
+- Logs execution and billing in the platform backend.
+- Returns clear errors such as `TOOL_NOT_FOUND` and `INSUFFICIENT_FUNDS`.
+- Turns missing tools into integration jobs.
+- Uses a bounded pipeline to discover docs, read API details, generate code, test/fix it, and publish the new tool.
+- Shows the catalog, wallet, credentials, integration jobs, and live feed in a Next.js dashboard.
 
-## Demo Story
+## How We Used Codex
 
-A developer asks Codex to build or run a workflow that needs scraping, email, SMS, or an API that is not available yet. Codex asks FuseKit what tools exist. If a tool is live, FuseKit checks the wallet, executes it, logs the result, and returns data to Codex.
+Codex was not just a helper for small code edits. We used Codex as the engineering partner for the whole project.
 
-If the tool is missing, FuseKit creates an integration job. The integrator reads the API docs, generates a Python adapter, tests and repairs it, publishes a tool definition and runtime manifest, then makes the new tool visible through `tools/list`, `/api/catalog`, and `/api/execute/{tool_name}`.
+Codex helped us:
 
-## Architecture
+- Understand and reshape the project into a split architecture.
+- Build the FastAPI platform service for MCP, wallet checks, tool execution, and catalog APIs.
+- Build the Python integrator pipeline for discovery, reader, codegen, test/fix, and publish.
+- Build the Next.js dashboard for catalog, wallet, credentials, live feed, and integration requests.
+- Keep shared JSON contracts aligned across the frontend and backend.
+- Add smoke tests for the critical demo path.
+- Debug service boundaries, API responses, and tool execution behavior.
 
-```mermaid
-flowchart TD
-    A[Codex or MCP client] -->|tools/list and tools/call| B[Platform service]
-    B --> C[Postgres catalog]
-    B --> D[Wallet middleware]
-    D --> E[Tool executor]
-    E --> F[Provider APIs]
+This project was designed with Codex, built with Codex, and made useful for Codex.
 
-    B -->|TOOL_NOT_FOUND| G[Integration job]
-    G --> H[Integrator service]
-    H --> I[Discovery]
-    I --> J[Reader]
-    J --> K[Codegen]
-    K --> L[Test and fix]
-    L --> M[Publish tool and manifest]
-    M --> C
-    M --> E
+## Why It Would Not Be Possible Without Codex
 
-    N[Next.js dashboard] -->|REST polling| B
-```
+FuseKit depends on Codex in two ways.
 
-## Demo Critical Path
+First, Codex made the hackathon build possible. The product has a frontend, MCP server, backend APIs, wallet layer, database models, integration pipeline, contracts, and tests. Building that much reliable infrastructure in hackathon time would not be realistic without Codex acting as a fast engineering collaborator.
 
-1. Codex connects to `http://localhost:8000/mcp/http`.
-2. `tools/list` returns live catalog tools.
-3. Codex executes `scrape_url`, `send_email`, and `send_sms`.
-4. Wallet checks run before every `tools/call`.
-5. A missing tool returns `TOOL_NOT_FOUND` and queues an integration job.
-6. The integrator moves through discovery, reader, codegen, test/fix, and publish.
-7. The new tool appears in the catalog and becomes callable.
-8. Final output is delivered as email, SMS, or fetched data.
+Second, the product itself only works because Codex can do real engineering work. When FuseKit sees a missing capability, the hard part is not saving a row in a database. The hard part is reading unfamiliar API docs, understanding auth and schemas, writing an adapter, testing it, fixing errors, and turning it into a reusable tool. That is exactly where Codex changes the shape of the problem.
 
-## Why This Fits Codex
+Without Codex, FuseKit would be a normal static API marketplace. With Codex, it becomes a marketplace that can grow while the developer is still in the workflow.
 
-FuseKit uses Codex where it is strongest: reading unfamiliar technical docs, writing integration code, fixing errors, and turning a one-off request into reusable infrastructure. The result is not another planner. It is a tool platform that gives Codex a stable MCP surface, a wallet-aware execution layer, and a path for handling capability gaps without leaving the workflow.
+## Demo Flow
 
-## Monorepo Layout
+1. Codex connects to FuseKit through one MCP URL.
+2. Codex calls `tools/list` and sees the live catalog.
+3. Codex executes tools like scraping, email, and SMS.
+4. FuseKit checks wallet balance before each call.
+5. If a requested tool is missing, FuseKit returns `TOOL_NOT_FOUND`.
+6. That missing tool becomes an integration job.
+7. Codex reads docs, generates code, tests/fixes the adapter, and publishes it.
+8. The new tool appears in the catalog and becomes reusable through MCP and HTTP.
+
+## Project Structure
 
 ```text
-.
-|-- apps/web                 # Next.js marketplace UI
-|-- services/platform        # FastAPI MCP server, REST APIs, wallet, execution
-|-- services/integrator      # Python integration pipeline
-|-- packages/contracts       # Shared JSON contracts
-|-- infra                    # Docker, Alembic, service images
-|-- scripts                  # Smoke tests, seed helpers, contract checks
-`-- docs                     # Architecture notes and demo flow
+apps/web
+  Next.js dashboard for the marketplace experience.
+
+services/platform
+  FastAPI MCP server, catalog APIs, wallet checks, tool execution, and logs.
+
+services/integrator
+  Codex-powered integration pipeline for missing API tools.
+
+packages/contracts
+  Shared JSON contracts used by frontend and backend services.
+
+infra
+  Database migrations, Docker resources, and local infrastructure files.
+
+scripts
+  Smoke tests, seed helpers, and contract validation.
 ```
 
-## Key Services
+## Core Contracts
 
-| Area | Location | Responsibility |
-| --- | --- | --- |
-| Frontend | `apps/web` | Catalog, wallet, credentials, live feed, integration form |
-| Platform | `services/platform` | MCP transports, REST APIs, tool registry, wallet, execution logs |
-| Integrator | `services/integrator` | Docs discovery, spec reading, codegen, test/fix, publish |
-| Contracts | `packages/contracts` | JSON schemas shared by TypeScript and Python |
-| Infra | `infra` | Postgres, MinIO, Docker images, Alembic migrations |
+FuseKit keeps these paths stable for the demo:
 
-## Important Endpoints
+- MCP `tools/list`
+- MCP `tools/call`
+- `GET /api/catalog`
+- `GET /api/catalog/recent`
+- `GET /api/wallet/balance`
+- `POST /api/wallet/topup`
+- `POST /api/integrate`
+- `POST /api/execute/{tool_name}`
+- `GET /api/capabilities/{tool_name}/manifest`
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /health` | Platform health check |
-| `GET /mcp/sse` | Legacy MCP SSE transport |
-| `ANY /mcp/http` | MCP Streamable HTTP transport |
-| `GET /api/catalog` | List catalog tools |
-| `GET /api/catalog/recent` | Recently published tools |
-| `GET /api/wallet/balance` | Current wallet balance |
-| `POST /api/wallet/topup` | Add demo credits |
-| `POST /api/integrate` | Queue an integration from docs |
-| `GET /api/integrate/{job_id}` | Poll integration status |
-| `POST /api/execute/{tool_name}` | Runtime execution endpoint for deployed apps |
-| `GET /api/capabilities/{tool_name}/manifest` | Machine-readable runtime contract |
+## What Judges Should Notice
 
-## Local Setup
+FuseKit is not trying to replace Codex with another planner. It gives Codex stronger hands.
 
-### Prerequisites
+Codex already knows how to reason about a developer's goal. FuseKit gives it a live tool layer: discover what exists, execute real APIs, charge safely, and create new tools when the catalog is missing something.
 
-- Python 3.11+
-- Node.js 20+
-- pnpm
-- Docker and Docker Compose
-
-### Install
-
-```bash
-pnpm setup
-```
-
-### Environment
-
-Create a root `.env` file with the keys needed for the demo path you want to run.
-
-```bash
-OPENAI_API_KEY=
-RESEND_API_KEY=
-RESEND_FROM_EMAIL=
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_FROM_NUMBER=
-SERPER_API_KEY=
-PRODUCTHUNT_API_TOKEN=
-```
-
-FuseKit does not auto-acquire third-party credentials. Provider keys are loaded by the platform, not by Codex.
-
-### Run
-
-```bash
-pnpm dev
-```
-
-This starts:
-
-- Postgres on `localhost:5432`
-- Platform API and MCP server on `localhost:8000`
-- Integrator service on `localhost:8001`
-- Web dashboard on `localhost:3000`
-
-Seed demo data if needed:
-
-```bash
-pnpm db:seed
-```
-
-The demo MCP token is:
+The result is a working platform loop:
 
 ```text
-demo-token-fusekit-2026
+Need tool -> discover -> execute -> bill -> log -> missing? -> integrate -> publish -> reuse
 ```
 
-## Connect Codex
-
-Use the Streamable HTTP MCP endpoint:
-
-```text
-http://localhost:8000/mcp/http
-```
-
-For CLI setup:
-
-```bash
-export FUSEKIT_MCP_TOKEN="demo-token-fusekit-2026"
-
-codex mcp add fusekit \
-  --url "http://localhost:8000/mcp/http" \
-  --bearer-token-env-var FUSEKIT_MCP_TOKEN
-
-codex mcp list
-```
-
-The web app also includes a Connect page with setup snippets for VS Code, the Codex app, and CLI.
-
-## Verification
-
-Run these after the stack is up:
-
-```bash
-curl http://localhost:8000/health
-curl http://localhost:8000/api/catalog
-python scripts/validate_contracts.py
-python scripts/smoke_demo.py
-pnpm build
-```
-
-`scripts/smoke_demo.py` checks the core demo flow: MCP discovery, tool execution, wallet deduction, missing-tool integration, catalog growth, and execution of the newly published tool.
-
-## Design Principles
-
-- Keep Codex as the planner; FuseKit is the tool platform.
-- Keep business logic out of the frontend.
-- Keep MCP error responses deterministic.
-- Use simple polling for the demo surface.
-- Use bounded retries for generated integrations.
-- Require explicit provider credentials before live third-party execution.
+That loop is the core of FuseKit.
 
 ## Built For The OpenAI Codex Hackathon
 
-FuseKit demonstrates Codex as an engineering collaborator inside a real platform loop. It does not only generate code once. It helps discover an API, produce an adapter, test it, publish it, and make it immediately reusable through MCP and HTTP contracts.
+FuseKit shows what becomes possible when Codex is treated as an engineering collaborator, not just a code generator. It helped build the platform, and the platform gives Codex a reusable way to work with real-world APIs.
 
 ## License
 
