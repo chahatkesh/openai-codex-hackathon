@@ -220,7 +220,6 @@ async def run() -> int:
                 expected = {
                     "scrape_url",
                     "send_email",
-                    "send_sms",
                     "search_web",
                     "get_producthunt",
                     "request_integration",
@@ -376,7 +375,7 @@ async def run() -> int:
                     # Keep fallback behavior predictable when generated name differs.
                     new_tool_name = next(
                         (name for name in tool_names if name not in {
-                            "scrape_url", "send_email", "send_sms", "search_web", "get_producthunt"
+                            "scrape_url", "send_email", "search_web", "get_producthunt"
                         }),
                         None,
                     )

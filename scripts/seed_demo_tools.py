@@ -72,37 +72,6 @@ SEED_TOOLS = [
         },
     },
     {
-        "name": "send_sms",
-        "description": "Send an SMS text message to a phone number. Use this when you need to send a text notification, alert, or short message to someone's phone.",
-        "provider": "twilio",
-        "cost_per_call": 20,
-        "status": "live",
-        "category": "communication",
-        "source": "seed",
-        "implementation_module": "app.tools.send_sms",
-        "input_schema": {
-            "type": "object",
-            "required": ["to", "message"],
-            "properties": {
-                "to": {
-                    "type": "string",
-                    "description": "Recipient phone number in E.164 format (e.g., +1234567890)",
-                },
-                "message": {
-                    "type": "string",
-                    "description": "SMS message body (max 1600 chars)",
-                },
-            },
-        },
-        "output_schema": {
-            "type": "object",
-            "properties": {
-                "message": {"type": "string"},
-                "sid": {"type": "string"},
-            },
-        },
-    },
-    {
         "name": "search_web",
         "description": "Search the web using Google and return top results. Use this when you need to find information, look up facts, discover websites, or research a topic.",
         "provider": "serper",
@@ -249,6 +218,8 @@ SEED_TOOLS = [
     },
 ]
 
+LEGACY_REMOVED_SEED_TOOLS = {"send_sms"}
+
 
 async def seed():
     async with async_session() as session:
@@ -269,6 +240,18 @@ async def seed():
             print("Created demo user (demo@fusekit.dev, 10000 credits)")
         else:
             print("Demo user already exists")
+
+        for tool_name in LEGACY_REMOVED_SEED_TOOLS:
+            existing = await session.execute(
+                select(ToolDefinition).where(
+                    ToolDefinition.name == tool_name,
+                    ToolDefinition.source == "seed",
+                )
+            )
+            legacy_tool = existing.scalar_one_or_none()
+            if legacy_tool is not None:
+                await session.delete(legacy_tool)
+                print(f"Removed legacy seeded tool: {tool_name}")
 
         # Seed tools
         for tool_data in SEED_TOOLS:

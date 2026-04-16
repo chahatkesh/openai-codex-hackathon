@@ -71,31 +71,6 @@ SEED_TOOLS: list[dict] = [
         },
     },
     {
-        "name": "send_sms",
-        "description": (
-            "Send an SMS text message to a phone number. Use this when you need"
-            " to send a text notification, alert, or short message to someone's phone."
-        ),
-        "provider": "twilio",
-        "cost_per_call": 20,
-        "status": "live",
-        "category": "communication",
-        "source": "seed",
-        "implementation_module": "app.tools.send_sms",
-        "input_schema": {
-            "type": "object",
-            "required": ["to", "message"],
-            "properties": {
-                "to": {"type": "string", "description": "Recipient phone number in E.164 format (e.g., +1234567890)"},
-                "message": {"type": "string", "description": "SMS message body (max 1600 chars)"},
-            },
-        },
-        "output_schema": {
-            "type": "object",
-            "properties": {"message": {"type": "string"}, "sid": {"type": "string"}},
-        },
-    },
-    {
         "name": "search_web",
         "description": (
             "Search the web using Google and return top results. Use this when you"
@@ -171,6 +146,8 @@ SEED_TOOLS: list[dict] = [
     },
 ]
 
+LEGACY_REMOVED_SEED_TOOLS = {"send_sms"}
+
 
 async def run_seed() -> None:
     """Idempotently seed demo user and tools."""
@@ -201,6 +178,18 @@ async def _seed_user(session: AsyncSession) -> None:
 
 
 async def _seed_tools(session: AsyncSession) -> None:
+    for tool_name in LEGACY_REMOVED_SEED_TOOLS:
+        result = await session.execute(
+            select(ToolDefinition).where(
+                ToolDefinition.name == tool_name,
+                ToolDefinition.source == "seed",
+            )
+        )
+        legacy_tool = result.scalar_one_or_none()
+        if legacy_tool is not None:
+            await session.delete(legacy_tool)
+            logger.info("seed_removed_legacy_tool name=%s", tool_name)
+
     for tool_data in SEED_TOOLS:
         result = await session.execute(
             select(ToolDefinition).where(ToolDefinition.name == tool_data["name"])
