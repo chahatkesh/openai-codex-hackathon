@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030712;
+  --background-soft: #081121;
+  --surface: #0f1c2e;
+  --surface-strong: #172740;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #2dd4bf;
+  --primary-hover: #14b8a6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--text);
+  --font-sans: "Space Grotesk", "Manrope", "Satoshi", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #030712;
+    --background-soft: #081121;
+    --surface: #0f1c2e;
+    --surface-strong: #172740;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-bg {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(45, 212, 191, 0.08), transparent 40%),
+    radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.08), transparent 35%),
+    radial-gradient(circle at 50% 80%, rgba(99, 102, 241, 0.05), transparent 40%),
+    linear-gradient(180deg, var(--background-soft), var(--background));
+  background-attachment: fixed;
+}
