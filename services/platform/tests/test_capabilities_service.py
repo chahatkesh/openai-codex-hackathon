@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytest
 
 from app.models import ToolDefinition
-from app.services import capabilities_service
+from app.services import capabilities_service, manifest_service
 
 
 def _tool(name: str = "get_producthunt") -> ToolDefinition:
@@ -33,13 +33,14 @@ def _tool(name: str = "get_producthunt") -> ToolDefinition:
     )
 
 
-def test_build_capability_manifest_contains_runtime_contract():
-    manifest = capabilities_service.build_capability_manifest(_tool())
+def test_build_runtime_manifest_contains_runtime_contract():
+    manifest = manifest_service.build_runtime_manifest(_tool())
 
     assert manifest["name"] == "get_producthunt"
     assert manifest["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
     assert manifest["billing"]["cost_per_call"] == 10
     assert manifest["auth"]["type"] == "bearer"
+    assert manifest["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
 
 
 @pytest.mark.asyncio

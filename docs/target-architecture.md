@@ -19,6 +19,7 @@ Each FuseKit capability should be treated as a reusable platform primitive with:
 - a catalog/tool definition in the database
 - an MCP discovery surface for UFC
 - a machine-readable manifest that tells UFC how to call FuseKit at runtime
+- an HTTP manifest endpoint for direct runtime-contract retrieval
 - an HTTP execution endpoint used by the deployed app
 - billing metadata used for wallet deduction
 
@@ -27,7 +28,8 @@ Each FuseKit capability should be treated as a reusable platform primitive with:
 1. UFC connects to FuseKit via MCP.
 2. UFC checks what built-in capabilities already exist.
 3. UFC retrieves a capability manifest for the needed built-in capability.
-4. UFC uses that manifest to generate the user’s deployed app.
+4. That manifest can be retrieved over MCP or over HTTP from the platform.
+5. UFC uses that manifest to generate the user’s deployed app.
 
 ## Runtime Flow
 
@@ -43,6 +45,7 @@ Each FuseKit capability should be treated as a reusable platform primitive with:
 FuseKit should have one shared internal execution service used by:
 
 - MCP `tools/call`
+- HTTP `/api/capabilities/{tool_name}/manifest`
 - HTTP `/api/execute/{tool_name}`
 
 That internal executor is responsible for:

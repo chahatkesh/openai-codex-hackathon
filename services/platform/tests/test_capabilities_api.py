@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timezone
 
 import pytest
 
+from app.api.capabilities import get_capability_manifest_http
 from app.models import ToolDefinition
-from app.tools import get_capability_manifest
 
 
 def _tool(name: str = "get_producthunt") -> ToolDefinition:
@@ -35,15 +34,14 @@ def _tool(name: str = "get_producthunt") -> ToolDefinition:
 
 
 @pytest.mark.asyncio
-async def test_get_capability_manifest_returns_json_manifest(monkeypatch):
+async def test_get_capability_manifest_http_returns_runtime_contract(monkeypatch):
     async def fake_get_tool_definition(_name: str):
         return _tool()
 
-    monkeypatch.setattr(get_capability_manifest, "get_tool_definition", fake_get_tool_definition)
+    monkeypatch.setattr("app.api.capabilities.get_tool_definition", fake_get_tool_definition)
 
-    payload = await get_capability_manifest.execute("get_producthunt")
-    manifest = json.loads(payload)
+    payload = await get_capability_manifest_http("get_producthunt")
 
-    assert manifest["name"] == "get_producthunt"
-    assert manifest["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
-    assert manifest["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")
+    assert payload["name"] == "get_producthunt"
+    assert payload["runtime_endpoint"]["path"] == "/api/execute/get_producthunt"
+    assert payload["manifest_pointer"]["manifest_path"].endswith("get_producthunt.json")

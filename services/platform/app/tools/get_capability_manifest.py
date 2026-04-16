@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 
-from app.services.capabilities_service import build_capability_manifest, get_tool_definition
+from app.services.capabilities_service import get_tool_definition
+from app.services.manifest_service import build_runtime_manifest
 from app.tools import registry
 
 
@@ -16,7 +17,7 @@ async def execute(capability_name: str) -> str:
             "Request integration through FuseKit if this capability is required."
         )
 
-    return json.dumps(build_capability_manifest(tool), indent=2)
+    return json.dumps(build_runtime_manifest(tool), indent=2)
 
 
 registry.register("get_capability_manifest", execute)

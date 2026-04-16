@@ -1,4 +1,4 @@
-"""Capability manifests and shared execution flow for FuseKit."""
+"""Shared execution flow for FuseKit capabilities."""
 
 from __future__ import annotations
 
@@ -53,65 +53,6 @@ async def get_tool_definition(tool_name: str) -> ToolDefinition | None:
             )
         )
         return result.scalar_one_or_none()
-
-
-def _build_example_request(schema: dict[str, Any]) -> dict[str, Any]:
-    properties = schema.get("properties", {})
-    required = schema.get("required", [])
-    example: dict[str, Any] = {}
-
-    for field in required:
-        prop = properties.get(field, {})
-        if "default" in prop:
-            example[field] = prop["default"]
-            continue
-        prop_type = prop.get("type")
-        if prop_type == "string":
-            if "url" in field:
-                example[field] = "https://example.com"
-            elif "email" in field or field == "to":
-                example[field] = "demo@example.com"
-            elif "phone" in field:
-                example[field] = "+10000000000"
-            else:
-                example[field] = "example"
-        elif prop_type == "integer":
-            example[field] = 1
-        elif prop_type == "boolean":
-            example[field] = False
-        elif prop_type == "array":
-            example[field] = []
-        elif prop_type == "object":
-            example[field] = {}
-        else:
-            example[field] = "example"
-
-    return example
-
-
-def build_capability_manifest(tool: ToolDefinition) -> dict[str, Any]:
-    """Build the runtime contract UFC can use to wire a deployed app."""
-    return {
-        "name": tool.name,
-        "description": tool.description,
-        "provider": tool.provider,
-        "runtime_endpoint": {
-            "method": "POST",
-            "path": f"/api/execute/{tool.name}",
-        },
-        "input_schema": tool.input_schema,
-        "output_schema": tool.output_schema,
-        "billing": {
-            "cost_per_call": tool.cost_per_call,
-            "currency": "credits",
-        },
-        "auth": {
-            "type": "bearer",
-            "header": "Authorization",
-            "format": "Bearer <fusekit_token>",
-        },
-        "example_request": _build_example_request(tool.input_schema),
-    }
 
 
 async def queue_missing_tool_integration(tool_name: str) -> None:

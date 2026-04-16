@@ -8,6 +8,7 @@ from mcp.server.sse import SseServerTransport
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.responses import Response
 
+from app.api.capabilities import router as capabilities_router
 from app.api.catalog import router as catalog_router
 from app.api.execute import router as execute_router
 from app.api.integrations import router as integrations_router
@@ -48,6 +49,7 @@ app.add_middleware(
 )
 
 # REST API routes
+app.include_router(capabilities_router)
 app.include_router(catalog_router)
 app.include_router(execute_router)
 app.include_router(wallet_router)
