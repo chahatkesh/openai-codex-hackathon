@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 from app.docs_fetcher import fetch_docs_bundle
 from app.llm import LLMClient
@@ -40,6 +41,14 @@ def _normalize_discovery_payload(data: dict) -> dict:
     elif not isinstance(key_endpoints, list):
         key_endpoints = []
     normalized["key_endpoints"] = [str(item) for item in key_endpoints[:20]]
+
+    rate_limits = normalized.get("rate_limits")
+    if rate_limits is None:
+        normalized["rate_limits"] = None
+    elif isinstance(rate_limits, str):
+        normalized["rate_limits"] = rate_limits
+    else:
+        normalized["rate_limits"] = json.dumps(rate_limits)
 
     normalized["sandbox_available"] = _coerce_bool(normalized.get("sandbox_available", False))
 
