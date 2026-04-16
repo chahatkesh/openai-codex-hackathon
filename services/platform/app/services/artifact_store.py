@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from app.config import settings
+
+
+LOCAL_DYNAMIC_TOOLS_DIR = Path("/tmp/fusekit_dynamic_tools")
+LOCAL_MANIFESTS_DIR = LOCAL_DYNAMIC_TOOLS_DIR / "manifests"
 
 
 def artifact_key_for_module(tool_name: str) -> str:
@@ -15,6 +20,34 @@ def artifact_key_for_manifest(tool_name: str) -> str:
 
 def artifact_uri_for_key(key: str) -> str:
     return f"s3://{settings.artifact_bucket}/{key}"
+
+
+def local_module_path(tool_name: str) -> Path:
+    return LOCAL_DYNAMIC_TOOLS_DIR / f"{tool_name}.py"
+
+
+def local_manifest_path(tool_name: str) -> Path:
+    return LOCAL_MANIFESTS_DIR / f"{tool_name}.json"
+
+
+def artifact_metadata(tool_name: str) -> dict[str, Any]:
+    module_key = artifact_key_for_module(tool_name)
+    manifest_key = artifact_key_for_manifest(tool_name)
+    return {
+        "backend": settings.artifact_backend,
+        "bucket": settings.artifact_bucket,
+        "preferred_source": "s3" if settings.artifact_backend == "s3" else "local",
+        "runtime_module": {
+            "local_path": str(local_module_path(tool_name)),
+            "artifact_key": module_key,
+            "artifact_uri": artifact_uri_for_key(module_key),
+        },
+        "manifest": {
+            "local_path": str(local_manifest_path(tool_name)),
+            "artifact_key": manifest_key,
+            "artifact_uri": artifact_uri_for_key(manifest_key),
+        },
+    }
 
 
 def _build_s3_client():

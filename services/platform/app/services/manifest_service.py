@@ -7,6 +7,7 @@ from typing import Any
 from app.config import settings
 from app.models import ToolDefinition
 from app.services.artifact_store import (
+    artifact_metadata,
     artifact_key_for_manifest,
     artifact_uri_for_key,
     download_text,
@@ -128,6 +129,7 @@ def build_runtime_manifest(tool: ToolDefinition) -> dict[str, Any]:
         "http_path": manifest_path,
         "http_url": f"{public_base_url}{manifest_path}",
     }
+    manifest["artifacts"] = artifact_metadata(tool.name)
     return manifest
 
 

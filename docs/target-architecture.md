@@ -31,6 +31,7 @@ Artifact publication should support:
 
 - local temp-file fallback for development
 - S3-compatible storage for durable runtime artifacts and manifests
+- artifact metadata in the capability manifest so UFC and operators know where runtime code and manifests are published
 
 ## Build-Time Flow
 
@@ -56,6 +57,9 @@ FuseKit should have one shared internal execution service used by:
 - MCP `tools/call`
 - HTTP `/api/capabilities/{tool_name}/manifest`
 - HTTP `/api/capabilities`
+- HTTP `/api/capabilities/{tool_name}`
+- HTTP `/api/capabilities/stats`
+- HTTP `/api/capabilities/recent`
 - HTTP `/api/execute/{tool_name}`
 
 That internal executor is responsible for:

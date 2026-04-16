@@ -19,7 +19,8 @@
     "output_schema",
     "example_request",
     "manifest_endpoint",
-    "manifest_pointer"
+    "manifest_pointer",
+    "artifacts"
   ],
   "properties": {
     "tool_name": { "type": "string" },
@@ -85,6 +86,17 @@
         "artifact_uri": { "type": "string" },
         "http_path": { "type": "string" },
         "http_url": { "type": "string", "format": "uri" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["backend", "bucket", "preferred_source", "runtime_module", "manifest"],
+      "properties": {
+        "backend": { "type": "string" },
+        "bucket": { "type": "string" },
+        "preferred_source": { "type": "string" },
+        "runtime_module": { "type": "object" },
+        "manifest": { "type": "object" }
       }
     },
     "docs_url": { "type": "string" },
