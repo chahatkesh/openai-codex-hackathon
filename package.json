@@ -1,0 +1,16 @@
+{
+  "name": "fusekit-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "mprocs",
+    "web:dev": "pnpm --filter @fusekit/web dev",
+    "build": "pnpm --filter @fusekit/web build",
+    "start": "pnpm --filter @fusekit/web start",
+    "lint": "pnpm --filter @fusekit/web lint",
+    "db:seed": "cd services/platform && python -m app.db_init",
+    "db:migrate": "cd infra && alembic upgrade head",
+    "db:migration:create": "cd infra && alembic revision --autogenerate -m",
+    "setup": "python3 -m venv .venv && source .venv/bin/activate && cd services/platform && pip install -e . && cd ../integrator && pip install -e . && pnpm install"
+  }
+}

@@ -1,0 +1,28 @@
+procs:
+  postgres:
+    shell: "docker compose -f infra/docker-compose.yml up postgres"
+    stop: "SIGTERM"
+    cwd: "."
+
+  platform:
+    shell: "source .venv/bin/activate && cd services/platform && python -m app.db_init && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    env:
+      DATABASE_URL: "postgresql+asyncpg://fusekit:fusekit@localhost:5432/fusekit"
+      DATABASE_URL_SYNC: "postgresql://fusekit:fusekit@localhost:5432/fusekit"
+      PYTHONPATH: "."
+    stop: "SIGTERM"
+    cwd: "."
+
+  integrator:
+    shell: "source .venv/bin/activate && cd services/integrator && uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+    env:
+      DATABASE_URL: "postgresql+asyncpg://fusekit:fusekit@localhost:5432/fusekit"
+      PLATFORM_API_URL: "http://localhost:8000"
+      PYTHONPATH: "."
+    stop: "SIGTERM"
+    cwd: "."
+
+  frontend:
+    shell: "pnpm --filter @fusekit/web dev"
+    stop: "SIGTERM"
+    cwd: "."
